@@ -20,6 +20,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.6.2",
     "@types/pg": "^8.23.1",
     "prisma": "^7.10.0",
@@ -36,6 +37,7 @@
     "express": "^5.2.1",
     "helmet": "^8.3.0",
     "http-status": "^2.1.0",
+    "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0"
   }
 }

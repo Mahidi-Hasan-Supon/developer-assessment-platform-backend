@@ -1,0 +1,19 @@
+model CompanyProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  companyName String
+  logo        String?
+  description String?
+  website     String?
+  location    String?
+  industry    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([companyName], name: "idx_company_profile_companyName")
+  @@index([industry], name: "idx_company_profile_industry")
+  @@index([location], name: "idx_company_profile_location")
+  @@map("company_profiles")
+}

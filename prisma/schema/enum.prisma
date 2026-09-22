@@ -1,0 +1,78 @@
+enum UserRole {
+  CANDIDATE
+  COMPANY
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum ProblemType {
+  MCQ
+  WRITTEN
+  CODING
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum AssessmentStatus {
+  DRAFT
+  PUBLISHED
+  ONGOING
+  COMPLETED
+  ARCHIVED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  USED
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  EXPIRED
+  AUTO_SUBMITTED
+}
+
+enum NotificationType {
+  INVITATION
+  ASSESSMENT
+  SUBMISSION
+  RESULT
+  PAYMENT
+  SYSTEM
+}
+
+enum PaymentProvider {
+  BKASH
+  STRIPE
+  SSLCOMMERZ
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum ResultStatus {
+  PENDING
+  PASSED
+  FAILED
+}
+
+enum SubmissionStatus {
+  PENDING
+  EVALUATED
+}

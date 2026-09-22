@@ -1,0 +1,23 @@
+model Report {
+  id                  String   @id @default(uuid())
+  assessmentId        String
+  generatedBy         String
+  totalCandidates     Int      @default(0)
+  completedCandidates Int      @default(0)
+  passedCandidates    Int      @default(0)
+  failedCandidates    Int      @default(0)
+  averageScore        Float    @default(0)
+  highestScore        Float    @default(0)
+  lowestScore         Float    @default(0)
+  pdfUrl              String?
+  generatedAt         DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  generator User @relation("ReportGenerator", fields: [generatedBy], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([assessmentId], name: "idx_report_assessmentId")
+  @@index([generatedBy], name: "idx_report_generatedBy")
+  @@map("reports")
+}

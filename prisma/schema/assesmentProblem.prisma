@@ -1,0 +1,19 @@
+model AssessmentProblem {
+  id        String   @id @default(uuid())
+  order     Int
+  marks     Int?
+  createdAt DateTime @default(now())
+
+  assessmentId String
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  problemId String
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([assessmentId, problemId], name: "uq_assessment_problem")
+  @@index([assessmentId], name: "idx_assessment_problem_assessmentId")
+  @@index([problemId], name: "idx_assessment_problem_problemId")
+  @@map("assessment_problems")
+}

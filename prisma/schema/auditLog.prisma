@@ -1,0 +1,18 @@
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId], name: "idx_audit_log_userId")
+  @@index([entity, entityId], name: "idx_audit_log_entity")
+  @@index([action], name: "idx_audit_log_action")
+  @@index([createdAt], name: "idx_audit_log_createdAt")
+  @@map("audit_logs")
+}

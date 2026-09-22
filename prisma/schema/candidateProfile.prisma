@@ -1,0 +1,15 @@
+model CandidateProfile {
+  id           String   @id @default(uuid())
+  phone        String?
+  profileImage String?
+  bio          String?
+  skills       String[]
+  resume       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("candidate_profiles")
+}

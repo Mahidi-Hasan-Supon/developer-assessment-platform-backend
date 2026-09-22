@@ -1,0 +1,28 @@
+model Result {
+  id            String       @id @default(uuid())
+  totalMarks    Int
+  obtainedMarks Float
+  percentage    Float
+  status        ResultStatus @default(PENDING)
+  evaluatedAt   DateTime?
+  publishedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  submissionId String @unique
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  candidateId String
+
+  candidate User @relation(fields: [candidateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  assessmentId String
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([candidateId], name: "idx_result_candidateId")
+  @@index([assessmentId], name: "idx_result_assessmentId")
+  @@index([status], name: "idx_result_status")
+  @@map("results")
+}

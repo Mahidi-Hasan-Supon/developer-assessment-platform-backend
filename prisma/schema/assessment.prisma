@@ -1,0 +1,34 @@
+model Assessment {
+  id              String           @id @default(uuid())
+  title           String
+  description     String?
+  durationMinutes Int
+  totalMarks      Int
+  passMarks       Int
+  status          AssessmentStatus @default(DRAFT)
+  deletedAt       DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  companyId String
+
+  company User @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  assessmentProblems AssessmentProblem[]
+
+  invitations Invitation[]
+
+  attempts Attempt[]
+
+  results Result[]
+
+  payments Payment[]
+
+  reports Report[]
+
+  @@index([companyId], name: "idx_assessment_companyId")
+  @@index([status], name: "idx_assessment_status")
+  @@index([deletedAt], name: "idx_assessment_deletedAt")
+  @@index([companyId, status], name: "idx_assessment_company_status")
+  @@map("assessments")
+}
