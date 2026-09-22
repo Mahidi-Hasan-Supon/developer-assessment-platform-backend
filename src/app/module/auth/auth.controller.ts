@@ -7,16 +7,48 @@ import { catchAsync } from "../../utiles/catchAsync";
 
 const registerUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const result = await authService.registerUser(req.body);
+     await authService.registerUser(req.body);
 
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.CREATED,
       message: "User registered successfully",
-      data: result,
+      data: null,
     });
   },
 );
+
+const verifyEmail = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+
+  const result = await authService.verifyEmail(payload);
+
+  const { accessToken, refreshToken ,user} = result;
+
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "none",
+    maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
+  });
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "none",
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+  });
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Verified Email successful",
+    data: {
+      accessToken,
+      refreshToken,
+      user
+    },
+  });
+});
 
 const loginUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -93,10 +125,34 @@ const refreshToken = catchAsync(
     });
   },
 );
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+  const result = await authService.forgotPassword(req.body.email);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "OTP sent to your email successfully",
+    data: result,
+  });
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+  const result = await authService.resetPassword(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Password reset successfully",
+    data: result,
+  });
+});
 
 export const authController = {
   registerUser,
+  verifyEmail,
   loginUser,
   refreshToken,
-  getMe
+  getMe,
+  forgotPassword,
+  resetPassword,
 };
