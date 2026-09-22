@@ -164,9 +164,9 @@ const verifyEmail = async (payload: IVerifyPayload) => {
       role: registrationPayload.role,
       status: UserStatus.ACTIVE,
       emailVerified: true,
-      candidateProfile:{
-        create:{}
-      }
+      candidateProfile: {
+        create: {},
+      },
     },
 
     omit: {
@@ -402,12 +402,13 @@ const forgotPassword = async (email: string) => {
 
   const templatePath = path.join(
     process.cwd(),
-    "src/app/templates/forgot-password.ejs",
+    "src/app/templates/forget-password-otp.ejs",
   );
 
   const templateData = {
     name: user.name,
-    otpValue,
+    otp: otpValue,
+    year: new Date().getFullYear(),
     expirationMinutes: expiredTime / 60,
   };
 
