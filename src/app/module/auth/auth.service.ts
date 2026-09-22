@@ -47,8 +47,8 @@ const registerUser = async (payload: IRegisterPayload) => {
     Number(config.bcrypt_salt_rounds),
   );
 
-  if(!passwordSecure){
-    throw new AppError(httpStatus.BAD_REQUEST,"Password incorrect")
+  if (!passwordSecure) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Password incorrect");
   }
 
   // Generate OTP
@@ -68,7 +68,7 @@ const registerUser = async (payload: IRegisterPayload) => {
 
   // Temporary registration data
   const registrationKey = `assessment:register:data:${email}`;
-
+  console.log("REGISTER PAYLOAD ROLE:", role);
   const registrationData = {
     name,
     email: email,
@@ -164,18 +164,21 @@ const verifyEmail = async (payload: IVerifyPayload) => {
       role: registrationPayload.role,
       status: UserStatus.ACTIVE,
       emailVerified: true,
-      candidateProfile:
-        registrationPayload.role === UserRole.CANDIDATE
-          ? {
-              create: {},
-            }
-          : undefined,
+      candidateProfile:{
+        create:{}
+      }
     },
 
     omit: {
       password: true,
     },
+    include: {
+      candidateProfile: true,
+    },
   });
+  console.log("REGISTRATION ROLE:", registrationPayload.role);
+  console.log("CANDIDATE ROLE:", UserRole.CANDIDATE);
+  console.log("IS CANDIDATE:", registrationPayload.role === UserRole.CANDIDATE);
 
   // Delete temporary registration data
   await redisClient.del(registrationKey);
@@ -694,5 +697,5 @@ export const authService = {
   refreshToken,
   forgotPassword,
   resetPassword,
-  googleLogin
+  googleLogin,
 };

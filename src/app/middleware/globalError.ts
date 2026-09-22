@@ -51,7 +51,7 @@ export const globalErrorHandler = async (
     statusCode = httpStatus.INTERNAL_SERVER_ERROR;
     errorMessage = "Error occurred during query execution";
   } else if (err instanceof AppError) {
-    err = err.message;
+    errorMessage = err.message;
     statusCode = err.statusCode;
  } 
   else if (err instanceof Error) {

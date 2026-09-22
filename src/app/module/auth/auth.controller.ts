@@ -12,7 +12,7 @@ const registerUser = catchAsync(
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.CREATED,
-      message: "User registered successfully",
+      message: "OTP sent your email.Please check it and verify the email",
       data: null,
     });
   },
@@ -43,9 +43,9 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.OK,
     message: "Verified Email successful",
     data: {
-      accessToken,
-      refreshToken,
       user,
+      accessToken,
+      refreshToken
     },
   });
 });
@@ -117,7 +117,7 @@ const refreshToken = catchAsync(
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
-      message: "Patient login successfully",
+      message: "Refresh token",
       data: {
         accessToken,
         refreshToken: newRefreshToken,

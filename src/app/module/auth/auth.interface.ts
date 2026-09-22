@@ -1,10 +1,11 @@
 import { int } from "zod";
+import { UserRole } from "../../../../generated/prisma/enums";
 
 export interface IRegisterPayload {
   name: string;
   email: string;
   password: string;
-  role: "CANDIDATE" | "COMPANY";
+  role: UserRole;
 }
 
 export interface ILoginPayload {
