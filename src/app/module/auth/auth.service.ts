@@ -4,6 +4,7 @@ import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
 import { jwtUtils } from "../../utiles/jwt";
 import {
+  IGooglePayload,
   ILoginPayload,
   IRegisterPayload,
   IResetPasswordPayload,
@@ -11,12 +12,18 @@ import {
 } from "./auth.interface";
 import config from "../../config";
 import { JwtPayload } from "jsonwebtoken";
-import { UserStatus } from "../../../../generated/prisma/enums";
+import {
+  AuthProvider,
+  UserRole,
+  UserStatus,
+} from "../../../../generated/prisma/enums";
 import crypto from "crypto";
 import { redisClient } from "../../lib/redis";
 import { transporter } from "../../lib/nodemailer";
 import path from "path";
 import ejs from "ejs";
+import { TokenPayload } from "google-auth-library";
+import { googleClient } from "../../lib/googleAuth";
 
 const registerUser = async (payload: IRegisterPayload) => {
   const { name, password, role } = payload;
@@ -39,6 +46,10 @@ const registerUser = async (payload: IRegisterPayload) => {
     password,
     Number(config.bcrypt_salt_rounds),
   );
+
+  if(!passwordSecure){
+    throw new AppError(httpStatus.BAD_REQUEST,"Password incorrect")
+  }
 
   // Generate OTP
   const otpValue = crypto.randomInt(100000, 1000000).toString();
@@ -153,6 +164,12 @@ const verifyEmail = async (payload: IVerifyPayload) => {
       role: registrationPayload.role,
       status: UserStatus.ACTIVE,
       emailVerified: true,
+      candidateProfile:
+        registrationPayload.role === UserRole.CANDIDATE
+          ? {
+              create: {},
+            }
+          : undefined,
     },
 
     omit: {
@@ -369,7 +386,7 @@ const forgotPassword = async (email: string) => {
 
   const otpValue = crypto.randomInt(100000, 1000000).toString();
 
-  const otpKey = `assessment:forget:password:reset:otp${user.email}`;
+  const otpKey = `assessment:forget:password:otp${user.email}`;
 
   const expiredTime = 5 * 60;
 
@@ -441,7 +458,7 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   // }
 
   // 6. Redis OTP key
-  const otpKey = `assessment:forgot-password:otp:${user.email}`;
+  const otpKey = `assessment:forget:password:otp${user.email}`;
 
   // 7. Get OTP from Redis
   const redisOtp = await redisClient.get(otpKey);
@@ -501,6 +518,174 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   };
 };
 
+const googleLogin = async (payload: IGooglePayload) => {
+  let googleIdTokenPayload: TokenPayload | null | undefined = null;
+
+  // ১. Google ID Token verification
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: payload.idToken,
+      audience: config.google_client_id,
+    });
+
+    googleIdTokenPayload = ticket.getPayload();
+  } catch (error) {
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      "Google token is invalid or expired",
+    );
+  }
+
+  // ২. Google account information check
+  if (
+    !googleIdTokenPayload ||
+    !googleIdTokenPayload.email ||
+    !googleIdTokenPayload.name ||
+    !googleIdTokenPayload.sub
+  ) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Invalid Google account information",
+    );
+  }
+
+  if (!googleIdTokenPayload.email_verified) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Google email is not verified");
+  }
+
+  const email = googleIdTokenPayload.email.trim().toLowerCase();
+  const name = googleIdTokenPayload.name;
+  const googleId = googleIdTokenPayload.sub;
+
+  // ৩. Email দিয়ে existing user খোঁজা
+  const isUserExist = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  let user;
+
+  // ৪. Existing user
+  if (isUserExist) {
+    // Blocked user
+    if (isUserExist.status === UserStatus.BLOCKED) {
+      throw new AppError(httpStatus.FORBIDDEN, "User is blocked");
+    }
+
+    // যদি আগে থেকেই অন্য Google account linked থাকে
+    if (isUserExist.googleId && isUserExist.googleId !== googleId) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Another Google account is already linked with this email",
+      );
+    }
+
+    // যদি Credentials account হয়
+    if (
+      isUserExist.authProvider === AuthProvider.CREDENTIALS &&
+      !isUserExist.googleId
+    ) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "An account already exists with this email. Please login with email and password.",
+      );
+    }
+
+    // Existing Google user
+    user = await prisma.user.update({
+      where: {
+        id: isUserExist.id,
+      },
+      data: {
+        googleId,
+        authProvider: AuthProvider.GOOGLE,
+        emailVerified: true,
+      },
+      omit: {
+        password: true,
+      },
+    });
+  }
+
+  // ৫. New Google user
+  else {
+    user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: null,
+        googleId,
+        authProvider: AuthProvider.GOOGLE,
+        role: UserRole.CANDIDATE,
+        status: UserStatus.ACTIVE,
+        emailVerified: true,
+
+        candidateProfile: {
+          create: {},
+        },
+      },
+
+      omit: {
+        password: true,
+      },
+    });
+
+    const templatePath = path.join(
+      process.cwd(),
+      "src/app/templates/candidate-welcome-email.ejs",
+    );
+
+    const templateData = {
+      name: user.name,
+    };
+
+    const html = await ejs.renderFile(templatePath, templateData);
+
+    await transporter.sendMail({
+      from: config.email_sender,
+      to: user.email,
+      subject: "Welcome to Development Assessment Platform",
+      html,
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+    if (user.status === "BLOCKED") {
+      throw new Error("User status Blocked");
+    }
+    if (user?.deletedAt) {
+      throw new Error("User is deleted");
+    }
+  }
+
+  const jwtPayload = {
+    userId: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
+
+  const accessToken = jwtUtils.createToken(
+    jwtPayload,
+    config.jwt_access_secret,
+    config.jwt_access_expires_in,
+  );
+
+  const refreshToken = jwtUtils.createToken(
+    jwtPayload,
+    config.jwt_refresh_secret,
+    config.jwt_refresh_expires_in,
+  );
+
+  return {
+    user,
+    accessToken,
+    refreshToken,
+  };
+};
+
 export const authService = {
   registerUser,
   verifyEmail,
@@ -509,4 +694,5 @@ export const authService = {
   refreshToken,
   forgotPassword,
   resetPassword,
+  googleLogin
 };

@@ -3,7 +3,7 @@ model CandidateProfile {
   phone        String?
   profileImage String?
   bio          String?
-  skills       String[]
+  skills       String[] @default([])
   resume       String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

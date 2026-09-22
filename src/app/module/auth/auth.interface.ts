@@ -1,3 +1,5 @@
+import { int } from "zod";
+
 export interface IRegisterPayload {
   name: string;
   email: string;
@@ -20,3 +22,7 @@ export interface IVerifyPayload {
   email: string;
   otp: string;
 }
+export interface IGooglePayload{
+  idToken:string
+}
+

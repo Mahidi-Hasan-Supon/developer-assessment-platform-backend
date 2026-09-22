@@ -7,7 +7,7 @@ import { catchAsync } from "../../utiles/catchAsync";
 
 const registerUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-     await authService.registerUser(req.body);
+    await authService.registerUser(req.body);
 
     sendResponse(res, {
       success: true,
@@ -23,7 +23,7 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
 
   const result = await authService.verifyEmail(payload);
 
-  const { accessToken, refreshToken ,user} = result;
+  const { accessToken, refreshToken, user } = result;
 
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
@@ -45,7 +45,7 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
     data: {
       accessToken,
       refreshToken,
-      user
+      user,
     },
   });
 });
@@ -147,6 +147,37 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const googleLogin = catchAsync(async (req: Request, res: Response) => {
+  const { credential } = req.body;
+
+  const result = await authService.googleLogin(credential);
+
+  const { accessToken, refreshToken, user } = result;
+
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "none",
+    maxAge: 1000 * 60 * 60 * 24,
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "none",
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  });
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Google login successful",
+    data: {
+      user,
+    },
+  });
+});
+
 export const authController = {
   registerUser,
   verifyEmail,
@@ -155,4 +186,5 @@ export const authController = {
   getMe,
   forgotPassword,
   resetPassword,
+  googleLogin
 };

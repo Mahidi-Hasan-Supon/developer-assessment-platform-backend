@@ -4,6 +4,12 @@ enum UserRole {
   ADMIN
 }
 
+enum AuthProvider{
+  CREDENTIALS 
+  GOOGLE
+}
+
+
 enum UserStatus {
   ACTIVE
   BLOCKED
