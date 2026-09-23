@@ -8,6 +8,7 @@ import { globalErrorHandler } from "./app/middleware/globalError";
 import { authRouter } from "./app/module/auth/auth.route";
 import { problemRouter } from "./app/module/problem/problem.route";
 import { assessmentRoutes } from "./app/module/assessment/assessment.route";
+import { assessmentProblemRoute } from "./app/module/assessmentProblem/assessmentProblem.route";
 
 const app: Application = express();
 
@@ -25,6 +26,7 @@ app.use(cookieParser());
 app.use("/api/v1/auth",authRouter);
 app.use("/api/v1/problem",problemRouter);
 app.use("/api/v1/assessments",assessmentRoutes);
+app.use("/api/v1/assessmentProblem",assessmentProblemRoute);
 
 
 

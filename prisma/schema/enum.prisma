@@ -4,7 +4,7 @@ enum UserRole {
   ADMIN
 }
 
-enum AuthProvider{
+enum AuthProvider {
   CREDENTIALS 
   GOOGLE
 }
