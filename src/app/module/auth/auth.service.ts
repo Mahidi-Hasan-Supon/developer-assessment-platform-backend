@@ -24,6 +24,7 @@ import path from "path";
 import ejs from "ejs";
 import { TokenPayload } from "google-auth-library";
 import { googleClient } from "../../lib/googleAuth";
+import { tr } from "zod/locales";
 
 const registerUser = async (payload: IRegisterPayload) => {
   const { name, password, role } = payload;
@@ -155,6 +156,12 @@ const verifyEmail = async (payload: IVerifyPayload) => {
     redisRegistrationData,
   );
 
+  const isCandidate =
+  registrationPayload.role === UserRole.CANDIDATE;
+
+const isCompany =
+  registrationPayload.role === UserRole.COMPANY;
+
   // Create user after OTP verification
   const createdUser = await prisma.user.create({
     data: {
@@ -164,16 +171,25 @@ const verifyEmail = async (payload: IVerifyPayload) => {
       role: registrationPayload.role,
       status: UserStatus.ACTIVE,
       emailVerified: true,
+         ...(isCandidate && {
       candidateProfile: {
         create: {},
       },
-    },
+    }),
+
+    ...(isCompany && {
+      companyProfile: {
+        create: {},
+      },
+    }),
+  },
 
     omit: {
       password: true,
     },
     include: {
       candidateProfile: true,
+      companyProfile:true
     },
   });
   console.log("REGISTRATION ROLE:", registrationPayload.role);

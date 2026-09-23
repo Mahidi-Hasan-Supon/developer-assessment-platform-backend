@@ -1,7 +1,6 @@
 model CompanyProfile {
   id          String   @id @default(uuid())
-  userId      String   @unique
-  companyName String
+  companyName String?
   logo        String?
   description String?
   website     String?
@@ -10,6 +9,7 @@ model CompanyProfile {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  userId      String   @unique
   user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([companyName], name: "idx_company_profile_companyName")
