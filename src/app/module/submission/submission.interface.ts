@@ -7,3 +7,6 @@ export interface ICreateSubmission {
 export interface IUpdateSubmissionStatus {
   status: SubmissionStatus;
 }
+export interface ISubmitSubmission {
+  submissionId: string;
+}

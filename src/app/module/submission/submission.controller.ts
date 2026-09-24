@@ -4,6 +4,7 @@ import httpStatus from "http-status";
 import { submissionService } from "./submission.service";
 import { catchAsync } from "../../utiles/catchAsync";
 import { sendResponse } from "../../utiles/sendResponse";
+import { sub } from "date-fns";
 
 const createSubmission = catchAsync(
   async (req: Request, res: Response) => {
@@ -63,8 +64,29 @@ const getSubmissionById = catchAsync(
   },
 );
 
+const submitSubmission = catchAsync(
+  async (req: Request, res: Response) => {
+    const { submissionId } = req.params;
+
+    const candidateId = req.user?.userId as string;
+
+    const result = await submissionService.submitSubmission(
+      submissionId as string,
+      candidateId,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Submission submitted and evaluated successfully",
+      data: result,
+    });
+  },
+);
+
 export const submissionController = {
   createSubmission,
   getMySubmissions,
   getSubmissionById,
+  submitSubmission
 };

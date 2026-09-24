@@ -28,6 +28,12 @@ router.get(
   submissionController.getSubmissionById,
 );
 
+router.patch(
+  "/:submissionId/submit",
+  auth(UserRole.CANDIDATE),
+  submissionController.submitSubmission,
+);
+
 export const submissionRoute = router;
 
 

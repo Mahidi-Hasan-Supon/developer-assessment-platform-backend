@@ -13,6 +13,7 @@ import { invitationRoute } from "./app/module/inventation/invitation.route";
 import { attemptRoute } from "./app/module/attempt/attempt.route";
 import { submissionRoute } from "./app/module/submission/submission.route";
 import { answerRoute } from "./app/module/answer/answer.route";
+import { resultRoute } from "./app/module/result/result.route";
 
 const app: Application = express();
 
@@ -35,6 +36,7 @@ app.use("/api/v1/invitation", invitationRoute);
 app.use("/api/v1/attempt", attemptRoute);
 app.use("/api/v1/submission", submissionRoute);
 app.use("/api/v1/answer", answerRoute);
+app.use("/api/v1/result", resultRoute);
 
 app.get("/", async (req: Request, res: Response) => {
   res.status(httpStatus.OK).json({
