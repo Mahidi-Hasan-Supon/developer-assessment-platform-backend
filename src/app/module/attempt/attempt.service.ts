@@ -8,6 +8,7 @@ import {
 import { ICreateAttempt } from "./attempt.interface";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
+import { addMinutes, isBefore } from "date-fns";
 
 const startAttempt = async (payload: ICreateAttempt, candidateId: string) => {
   const { invitationId } = payload;
@@ -61,11 +62,10 @@ const startAttempt = async (payload: ICreateAttempt, candidateId: string) => {
     );
   }
 
-  // 6. Calculate expiry time
   const startedAt = new Date();
-
-  const expiresAt = new Date(
-    startedAt.getTime() + invitation.assessment.durationMinutes * 60 * 1000,
+  const expiresAt = addMinutes(
+    startedAt,
+    invitation.assessment.durationMinutes,
   );
 
   // 7. Create attempt
@@ -174,18 +174,15 @@ const submitAttempt = async (attemptId: string, candidateId: string) => {
 
   const now = new Date();
 
-  // Time expired
-  if (now >= attempt.expiresAt) {
+  // Time check expire the sumit
+  if (!isBefore(now, attempt.expiresAt)) {
     const result = await prisma.attempt.update({
-      where: {
-        id: attemptId,
-      },
+      where: { id: attemptId },
       data: {
         status: AttemptStatus.AUTO_SUBMITTED,
         submittedAt: now,
       },
     });
-
     return result;
   }
 
