@@ -9,3 +9,12 @@ export interface ICreateInvitation {
 export interface IUpdateInvitationStatus {
   status: InvitationStatus;
 }
+
+export interface IQuery {
+  searchTerm?: string;
+  page?: string;
+  limit?: string;
+  sortBy?: string;
+  sortOrder?: string;
+  status?: string;
+}

@@ -1,12 +1,13 @@
 import httpStatus from "http-status";
 import { UserRole } from "../../../../generated/prisma/enums";
 import {
+  IAssessmentProblemQuery,
   ICreateAssessmentProblem,
   IUpdateAssessmentProblem,
 } from "./assessmentProblem.interface";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
-
+import { AssessmentProblemWhereInput } from "../../../../generated/prisma/models";
 
 const createAssessmentProblem = async (
   assessmentId: string,
@@ -90,7 +91,6 @@ const getAssessmentProblems = async (
   userId: string,
   role: UserRole,
 ) => {
-  // Check assessment
   const assessment = await prisma.assessment.findFirst({
     where: {
       id: assessmentId,
@@ -102,7 +102,6 @@ const getAssessmentProblems = async (
     throw new AppError(httpStatus.NOT_FOUND, "Assessment not found");
   }
 
-  // Check permission
   const isAdmin = role === UserRole.ADMIN;
   const isOwner = assessment.companyId === userId;
 

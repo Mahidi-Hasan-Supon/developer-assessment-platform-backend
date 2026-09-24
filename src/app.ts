@@ -9,7 +9,7 @@ import { authRouter } from "./app/module/auth/auth.route";
 import { problemRouter } from "./app/module/problem/problem.route";
 import { assessmentRoutes } from "./app/module/assessment/assessment.route";
 import { assessmentProblemRoute } from "./app/module/assessmentProblem/assessmentProblem.route";
-import { invitationRoute } from "./app/module/inventation/invitation.route";
+import { invitationRoute } from "./app/module/invitation/invitation.route";
 import { attemptRoute } from "./app/module/attempt/attempt.route";
 import { submissionRoute } from "./app/module/submission/submission.route";
 import { answerRoute } from "./app/module/answer/answer.route";

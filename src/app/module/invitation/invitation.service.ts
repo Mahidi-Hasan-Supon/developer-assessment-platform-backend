@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import { InvitationStatus, UserRole } from "../../../../generated/prisma/enums";
 import {
   ICreateInvitation,
+  IQuery,
   IUpdateInvitationStatus,
 } from "./invitation.interface";
 import { AppError } from "../../utiles/appError";
@@ -70,20 +71,84 @@ const createInvitation = async (payload: ICreateInvitation, userId: string) => {
   return result;
 };
 
-const getMyInvitations = async (candidateId: string) => {
-  const result = await prisma.invitation.findMany({
-    where: {
+const getMyInvitations = async (candidateId: string, query: IQuery) => {
+  const limit = query.limit ? Number(query.limit) : 10;
+  const page = query.page ? Number(query.page) : 1;
+  const skip = (page - 1) * limit;
+
+  // Sorting
+  const allowedSortFields = ["createdAt", "invitedAt", "expiresAt"];
+
+  const sortBy = allowedSortFields.includes(query.sortBy || "")
+    ? query.sortBy!
+    : "createdAt";
+
+  const sortOrder = query.sortOrder === "asc" ? "asc" : "desc";
+
+  const andConditions: any[] = [
+    {
       candidateId,
     },
+  ];
+
+  // Search assessment title/description
+  if (query.searchTerm) {
+    andConditions.push({
+      assessment: {
+        OR: [
+          {
+            title: {
+              contains: query.searchTerm,
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: query.searchTerm,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  // Status filter
+  if (query.status) {
+    andConditions.push({
+      status: query.status as InvitationStatus,
+    });
+  }
+
+  const result = await prisma.invitation.findMany({
+    where: {
+      AND: andConditions,
+    },
+    take: limit,
+    skip,
     orderBy: {
-      createdAt: "desc",
+      [sortBy]: sortOrder,
     },
     include: {
       assessment: true,
     },
   });
 
-  return result;
+  const totalInvitationCount = await prisma.invitation.count({
+    where: {
+      AND: andConditions,
+    },
+  });
+
+  return {
+    data: result,
+    meta: {
+      page,
+      limit,
+      total: totalInvitationCount,
+      totalPages: Math.ceil(totalInvitationCount / limit),
+    },
+  };
 };
 
 const getAssessmentInvitations = async (

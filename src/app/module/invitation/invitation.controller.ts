@@ -21,13 +21,14 @@ const createInvitation = catchAsync(async (req: Request, res: Response) => {
 const getMyInvitations = catchAsync(async (req: Request, res: Response) => {
   const candidateId = req.user?.userId as string;
 
-  const result = await invitationService.getMyInvitations(candidateId);
+  const {data , meta} = await invitationService.getMyInvitations(candidateId , req.query);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Invitations retrieved successfully",
-    data: result,
+    data,
+    meta
   });
 });
 
