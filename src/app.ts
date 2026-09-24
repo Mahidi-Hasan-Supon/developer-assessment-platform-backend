@@ -12,6 +12,7 @@ import { assessmentProblemRoute } from "./app/module/assessmentProblem/assessmen
 import { invitationRoute } from "./app/module/inventation/invitation.route";
 import { attemptRoute } from "./app/module/attempt/attempt.route";
 import { submissionRoute } from "./app/module/submission/submission.route";
+import { answerRoute } from "./app/module/answer/answer.route";
 
 const app: Application = express();
 
@@ -33,7 +34,7 @@ app.use("/api/v1/assessmentProblem",assessmentProblemRoute);
 app.use("/api/v1/invitation", invitationRoute);
 app.use("/api/v1/attempt", attemptRoute);
 app.use("/api/v1/submission", submissionRoute);
-
+app.use("/api/v1/answer", answerRoute);
 
 app.get("/", async (req: Request, res: Response) => {
   res.status(httpStatus.OK).json({
