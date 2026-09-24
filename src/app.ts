@@ -10,6 +10,7 @@ import { problemRouter } from "./app/module/problem/problem.route";
 import { assessmentRoutes } from "./app/module/assessment/assessment.route";
 import { assessmentProblemRoute } from "./app/module/assessmentProblem/assessmentProblem.route";
 import { invitationRoute } from "./app/module/inventation/invitation.route";
+import { attemptRoute } from "./app/module/attempt/attempt.route";
 
 const app: Application = express();
 
@@ -29,6 +30,7 @@ app.use("/api/v1/problem",problemRouter);
 app.use("/api/v1/assessments",assessmentRoutes);
 app.use("/api/v1/assessmentProblem",assessmentProblemRoute);
 app.use("/api/v1/invitation", invitationRoute);
+app.use("/api/v1/attempt", attemptRoute);
 
 
 app.get("/", async (req: Request, res: Response) => {
