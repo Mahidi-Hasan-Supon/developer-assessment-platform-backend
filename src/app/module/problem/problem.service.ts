@@ -1,7 +1,8 @@
-import { UserRole } from "../../../../generated/prisma/enums";
+import { Difficulty, ProblemType, UserRole } from "../../../../generated/prisma/enums";
+import { ProblemWhereInput } from "../../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
-import { ICreateProblem, IUpdateProblem } from "./problem.interface";
+import { ICreateProblem, IQuery, IUpdateProblem } from "./problem.interface";
 import httpStatus from "http-status";
 
 const createProblem = async (payload: ICreateProblem, userId: string) => {
@@ -21,15 +22,72 @@ const createProblem = async (payload: ICreateProblem, userId: string) => {
   return createdProblem;
 };
 
-const getAllProblems = async () => {
-  const problems = await prisma.problem.findMany({
+const getAllProblems = async (query: IQuery) => {
+  const limit = query.limit ? Number(query.limit) : 10;
+  const page = query.page ? Number(query.page) : 1;
+  const skip = (page - 1) * limit;
+
+  const sortBy = query.sortBy ? query.sortBy : "createdAt";
+  const sortOrder = query.sortOrder ? query.sortOrder : "desc";
+
+  const andConditions: ProblemWhereInput[] = [];
+
+  // Searching
+  if (query.searchTerm) {
+    andConditions.push({
+      OR: [
+        {
+          title: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          description: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+      ],
+    });
+  }
+
+  // Filtering
+  if (query.type) {
+    andConditions.push({
+      type: query.type as ProblemType,
+    });
+  }
+
+  if (query.difficulty) {
+    andConditions.push({
+      difficulty: query.difficulty as Difficulty,
+    });
+  }
+
+  if (query.createdBy) {
+    andConditions.push({
+      createdBy: query.createdBy,
+    });
+  }
+
+  // Soft deleted problems বাদ
+  andConditions.push({
+    deletedAt: null,
+  });
+
+  const allProblems = await prisma.problem.findMany({
     where: {
-      deletedAt: null,
+      AND: andConditions.length > 0 ? andConditions : undefined,
     },
 
+    take: limit,
+    skip,
+
     orderBy: {
-      createdAt: "desc",
+      [sortBy]: sortOrder,
     },
+
     include: {
       creator: {
         select: {
@@ -41,7 +99,21 @@ const getAllProblems = async () => {
     },
   });
 
-  return problems;
+  const totalProblemCount = await prisma.problem.count({
+    where: {
+      AND: andConditions,
+    },
+  });
+
+  return {
+    data: allProblems,
+    meta: {
+      page,
+      limit,
+      total: totalProblemCount,
+      totalPages: Math.ceil(totalProblemCount / limit),
+    },
+  };
 };
 
 const getProblemById = async (id: string) => {
@@ -85,33 +157,32 @@ const updateProblem = async (
     throw new AppError(httpStatus.NOT_FOUND, "Problem not found");
   }
 
-//   if (problem.createdBy !== userId) {
-//     throw new AppError(
-//       httpStatus.FORBIDDEN,
-//       "You can only update your own problem",
-//     );
-//   }
-//   if (role !== UserRole.ADMIN && problem.createdBy !== userId) {
-//     throw new AppError(
-//       httpStatus.FORBIDDEN,
-//       "You can only update your own problem",
-//     );
-//   }
+  //   if (problem.createdBy !== userId) {
+  //     throw new AppError(
+  //       httpStatus.FORBIDDEN,
+  //       "You can only update your own problem",
+  //     );
+  //   }
+  //   if (role !== UserRole.ADMIN && problem.createdBy !== userId) {
+  //     throw new AppError(
+  //       httpStatus.FORBIDDEN,
+  //       "You can only update your own problem",
+  //     );
+  //   }
 
-  
-//   if (role !== UserRole.ADMIN && problem.createdBy !== userId) {
-//     throw new AppError(
-//       httpStatus.FORBIDDEN,
-//       "You can only update your own problem",
-//     );
-//   }
+  //   if (role !== UserRole.ADMIN && problem.createdBy !== userId) {
+  //     throw new AppError(
+  //       httpStatus.FORBIDDEN,
+  //       "You can only update your own problem",
+  //     );
+  //   }
 
-//   if (problem.createdBy !== userId) {
-//     throw new AppError(
-//       httpStatus.FORBIDDEN,
-//       "You can only delete your own problem",
-//     );
-  
+  //   if (problem.createdBy !== userId) {
+  //     throw new AppError(
+  //       httpStatus.FORBIDDEN,
+  //       "You can only delete your own problem",
+  //     );
+
   const isAdmin = role === UserRole.ADMIN;
   const isOwner = problem.createdBy === userId;
 
@@ -148,19 +219,19 @@ const deleteProblem = async (id: string, userId: string, role: UserRole) => {
     throw new AppError(httpStatus.NOT_FOUND, "Problem not found");
   }
 
-//   if (role !== UserRole.ADMIN && problem.createdBy !== userId) {
-//     throw new AppError(
-//       httpStatus.FORBIDDEN,
-//       "You can only update your own problem",
-//     );
-//   }
+  //   if (role !== UserRole.ADMIN && problem.createdBy !== userId) {
+  //     throw new AppError(
+  //       httpStatus.FORBIDDEN,
+  //       "You can only update your own problem",
+  //     );
+  //   }
 
-//   if (problem.createdBy !== userId) {
-//     throw new AppError(
-//       httpStatus.FORBIDDEN,
-//       "You can only delete your own problem",
-//     );
-//   }
+  //   if (problem.createdBy !== userId) {
+  //     throw new AppError(
+  //       httpStatus.FORBIDDEN,
+  //       "You can only delete your own problem",
+  //     );
+  //   }
   const isAdmin = role === UserRole.ADMIN;
   const isOwner = problem.createdBy === userId;
 

@@ -20,13 +20,15 @@ const createProblem = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllProblems = catchAsync(async (req: Request, res: Response) => {
-  const result = await problemService.getAllProblems();
+  const {data , meta} = await problemService.getAllProblems(req.query);
 
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
     message: "Problems retrieved successfully",
-    data: result,
+    data,
+    meta
+    
   });
 });
 
