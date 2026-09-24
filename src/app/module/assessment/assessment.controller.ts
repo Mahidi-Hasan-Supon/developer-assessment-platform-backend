@@ -23,13 +23,14 @@ const createAssessment = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllAssessments = catchAsync(async (req: Request, res: Response) => {
-  const result = await assessmentService.getAllAssessments();
+  const {data , meta} = await assessmentService.getAllAssessments(req.query);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Assessments retrieved successfully",
-    data: result,
+    data,
+    meta
   });
 });
 
@@ -69,7 +70,7 @@ const deleteAssessment = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.userId;
   const role = req.user?.role;
 
-  const result = await assessmentService.deleteAssessment(
+   await assessmentService.deleteAssessment(
     req.params.id as string,
     userId as string,
     role as UserRole,
@@ -79,7 +80,7 @@ const deleteAssessment = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "Assessment deleted successfully",
-    data: result,
+    data: null,
   });
 });
 

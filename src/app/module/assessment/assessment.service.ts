@@ -1,8 +1,9 @@
-import { ICreateAssessment, IUpdateAssessment } from "./assessment.interface";
+import { ICreateAssessment, IQuery, IUpdateAssessment } from "./assessment.interface";
 import httpStatus from "http-status";
-import { UserRole } from "../../../../generated/prisma/enums";
+import { AssessmentStatus, UserRole } from "../../../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
+import { AssessmentWhereInput } from "../../../../generated/prisma/models";
 
 const createAssessment = async (
   payload: ICreateAssessment,
@@ -22,17 +23,82 @@ const createAssessment = async (
   return result;
 };
 
-const getAllAssessments = async () => {
-  const result = await prisma.assessment.findMany({
+const getAllAssessments = async (query: IQuery) => {
+  const limit = query.limit ? Number(query.limit) : 10;
+  const page = query.page ? Number(query.page) : 1;
+  const skip = (page - 1) * limit;
+
+  const sortBy = query.sortBy ? query.sortBy : "createdAt";
+  const sortOrder = query.sortOrder ? query.sortOrder : "desc";
+
+  const andConditions: AssessmentWhereInput[] = [];
+
+  // Searching
+  if (query.searchTerm) {
+    andConditions.push({
+      OR: [
+        {
+          title: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          description: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+      ],
+    });
+  }
+
+  // Filtering
+  if (query.status) {
+    andConditions.push({
+      status: query.status as AssessmentStatus,
+    });
+  }
+
+  if (query.companyId) {
+    andConditions.push({
+      companyId: query.companyId,
+    });
+  }
+
+  // Soft deleted বাদ
+  andConditions.push({
+    deletedAt: null,
+  });
+
+  const allAssessments = await prisma.assessment.findMany({
     where: {
-      deletedAt: null,
+      AND: andConditions,
     },
+
+    take: limit,
+    skip,
+
     orderBy: {
-      createdAt: "desc",
+      [sortBy]: sortOrder,
     },
   });
 
-  return result;
+  const totalAssessmentCount = await prisma.assessment.count({
+    where: {
+      AND: andConditions,
+    },
+  });
+
+  return {
+    data: allAssessments,
+    meta: {
+      page,
+      limit,
+      total: totalAssessmentCount,
+      totalPages: Math.ceil(totalAssessmentCount / limit),
+    },
+  };
 };
 
 const getAssessmentById = async (id: string) => {

@@ -1,5 +1,3 @@
-
-
 import { AssessmentStatus } from "../../../../generated/prisma/enums";
 
 export interface ICreateAssessment {
@@ -19,3 +17,13 @@ export interface IUpdateAssessment {
   status?: AssessmentStatus;
 }
 
+export interface IQuery {
+  searchTerm?: string;
+  page?: string;
+  limit?: string;
+  sortBy?: string;
+  sortOrder?: string;
+
+  status?: string;
+  companyId?: string;
+}

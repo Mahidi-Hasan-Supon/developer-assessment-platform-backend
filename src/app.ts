@@ -30,7 +30,7 @@ app.use(cookieParser());
 
 app.use("/api/v1/auth",authRouter);
 app.use("/api/v1/problem",problemRouter);
-app.use("/api/v1/assessments",assessmentRoutes);
+app.use("/api/v1/assessment",assessmentRoutes);
 app.use("/api/v1/assessmentProblem",assessmentProblemRoute);
 app.use("/api/v1/invitation", invitationRoute);
 app.use("/api/v1/attempt", attemptRoute);
