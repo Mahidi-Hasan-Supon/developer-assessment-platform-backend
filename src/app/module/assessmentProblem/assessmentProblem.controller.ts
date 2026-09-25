@@ -9,7 +9,7 @@ import { sendResponse } from "../../utiles/sendResponse";
 const createAssessmentProblem = catchAsync(
   async (req: Request, res: Response) => {
     const { assessmentId } = req.params;
-    const payload = req.body
+    const payload = req.body;
     const userId = req.user?.userId as string;
     const role = req.user?.role as UserRole;
 
@@ -29,14 +29,14 @@ const createAssessmentProblem = catchAsync(
   },
 );
 
-const getAssessmentProblems = catchAsync(
+const getByIdAssessmentProblems = catchAsync(
   async (req: Request, res: Response) => {
     const { assessmentId } = req.params;
 
     const userId = req.user?.userId as string;
     const role = req.user?.role as UserRole;
 
-    const result = await assessmentProblemService.getAssessmentProblems(
+    const result = await assessmentProblemService.getByIdAssessmentProblems(
       assessmentId as string,
       userId,
       role,
@@ -47,6 +47,22 @@ const getAssessmentProblems = catchAsync(
       success: true,
       message: "Assessment problems retrieved successfully",
       data: result,
+    });
+  },
+);
+
+const getAllAssessmentProblems = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await assessmentProblemService.getAllAssessmentProblems(
+      req.query,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Assessment problems retrieved successfully",
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -100,7 +116,8 @@ const deleteAssessmentProblem = catchAsync(
 
 export const assessmentProblemController = {
   createAssessmentProblem,
-  getAssessmentProblems,
+  getByIdAssessmentProblems,
   updateAssessmentProblem,
   deleteAssessmentProblem,
+  getAllAssessmentProblems
 };

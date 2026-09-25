@@ -31,6 +31,18 @@ const getMyAttempts = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllAttempts = catchAsync(async (req: Request, res: Response) => {
+  const {data , meta} = await attemptService.getAllAttempts(req.query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Attempts retrieved successfully",
+    data,
+    meta
+  });
+});
+
 const getAttemptById = catchAsync(async (req: Request, res: Response) => {
   const { attemptId } = req.params;
 
@@ -71,6 +83,7 @@ const submitAttempt = catchAsync(async (req: Request, res: Response) => {
 
 export const attemptController = {
   startAttempt,
+  getAllAttempts,
   getMyAttempts,
   getAttemptById,
   submitAttempt,

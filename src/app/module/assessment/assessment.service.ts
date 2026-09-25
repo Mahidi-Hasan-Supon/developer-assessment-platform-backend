@@ -1,4 +1,8 @@
-import { ICreateAssessment, IQuery, IUpdateAssessment } from "./assessment.interface";
+import {
+  ICreateAssessment,
+  IQuery,
+  IUpdateAssessment,
+} from "./assessment.interface";
 import httpStatus from "http-status";
 import { AssessmentStatus, UserRole } from "../../../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
@@ -115,6 +119,7 @@ const getAssessmentById = async (id: string) => {
 
   return result;
 };
+
 const updateAssessment = async (
   id: string,
   payload: IUpdateAssessment,
@@ -152,6 +157,27 @@ const updateAssessment = async (
     );
   }
 
+  // Assessment status lifecycle
+  if (payload.status) {
+    const allowedTransitions: Record<AssessmentStatus, AssessmentStatus[]> = {
+      [AssessmentStatus.DRAFT]: [AssessmentStatus.PUBLISHED],
+      [AssessmentStatus.PUBLISHED]: [AssessmentStatus.ONGOING],
+      [AssessmentStatus.ONGOING]: [AssessmentStatus.COMPLETED],
+      [AssessmentStatus.COMPLETED]: [AssessmentStatus.ARCHIVED],
+      [AssessmentStatus.ARCHIVED]: [],
+    };
+
+    const currentStatus = assessment.status;
+    const newStatus = payload.status;
+
+    if (!allowedTransitions[currentStatus].includes(newStatus)) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `Cannot change assessment status from ${currentStatus} to ${newStatus}`,
+      );
+    }
+  }
+
   const result = await prisma.assessment.update({
     where: {
       id,
@@ -163,6 +189,7 @@ const updateAssessment = async (
 
   return result;
 };
+
 
 const deleteAssessment = async (id: string, userId: string, role: UserRole) => {
   const assessment = await prisma.assessment.findFirst({
@@ -203,5 +230,5 @@ export const assessmentService = {
   getAllAssessments,
   getAssessmentById,
   deleteAssessment,
-  updateAssessment
+  updateAssessment,
 };

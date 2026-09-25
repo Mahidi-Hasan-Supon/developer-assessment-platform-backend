@@ -15,18 +15,16 @@ router.post(
 );
 
 router.get(
-  "/my",
-  auth(UserRole.CANDIDATE),
-  attemptController.getMyAttempts,
+  "/",
+  auth(UserRole.ADMIN, UserRole.COMPANY),
+  attemptController.getAllAttempts,
 );
+
+router.get("/my", auth(UserRole.CANDIDATE), attemptController.getMyAttempts);
 
 router.get(
   "/:attemptId",
-  auth(
-    UserRole.CANDIDATE,
-    UserRole.COMPANY,
-    UserRole.ADMIN,
-  ),
+  auth(UserRole.CANDIDATE, UserRole.COMPANY, UserRole.ADMIN),
   attemptController.getAttemptById,
 );
 

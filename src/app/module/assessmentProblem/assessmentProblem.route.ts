@@ -5,7 +5,7 @@ import { validationRequest } from "../../middleware/validationRequestByZod";
 import { assessmentProblemValidation } from "./assessmentProblem.validation";
 import { assessmentProblemController } from "./assessmentProblem.controller";
 
-const router = Router()
+const router = Router();
 
 router.post(
   "/:assessmentId/problems",
@@ -15,9 +15,15 @@ router.post(
 );
 
 router.get(
+  "/",
+  auth(UserRole.ADMIN, UserRole.COMPANY),
+  assessmentProblemController.getAllAssessmentProblems,
+);
+
+router.get(
   "/:assessmentId/problems",
   auth(UserRole.ADMIN, UserRole.COMPANY),
-  assessmentProblemController.getAssessmentProblems,
+  assessmentProblemController.getByIdAssessmentProblems,
 );
 
 router.patch(
@@ -33,5 +39,4 @@ router.delete(
   assessmentProblemController.deleteAssessmentProblem,
 );
 
-export const assessmentProblemRoute = router
-
+export const assessmentProblemRoute = router;

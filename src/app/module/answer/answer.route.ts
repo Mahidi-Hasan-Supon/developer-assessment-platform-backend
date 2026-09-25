@@ -19,6 +19,7 @@ router.get(
   auth(UserRole.CANDIDATE),
   answerController.getMyAnswers,
 );
+
 router.patch(
   "/:answerId/evaluate",
   auth(UserRole.COMPANY),

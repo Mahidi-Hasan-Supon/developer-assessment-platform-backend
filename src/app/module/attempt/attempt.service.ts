@@ -1,14 +1,16 @@
 import httpStatus from "http-status";
 import {
+  AssessmentStatus,
   AttemptStatus,
   InvitationStatus,
   UserRole,
 } from "../../../../generated/prisma/enums";
 
-import { ICreateAttempt } from "./attempt.interface";
+import { ICreateAttempt, IQuery } from "./attempt.interface";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
 import { addMinutes, isBefore } from "date-fns";
+import { AttemptWhereInput } from "../../../../generated/prisma/models";
 
 const startAttempt = async (payload: ICreateAttempt, candidateId: string) => {
   const { invitationId } = payload;
@@ -46,6 +48,17 @@ const startAttempt = async (payload: ICreateAttempt, candidateId: string) => {
   // 4. Check assessment
   if (invitation.assessment.deletedAt) {
     throw new AppError(httpStatus.NOT_FOUND, "Assessment not found");
+  }
+
+  // 5. Check assessment status
+  if (
+    invitation.assessment.status !== AssessmentStatus.PUBLISHED &&
+    invitation.assessment.status !== AssessmentStatus.ONGOING
+  ) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "This assessment is not available for attempt",
+    );
   }
 
   // 5. Check if attempt already exists
@@ -107,6 +120,92 @@ const getMyAttempts = async (candidateId: string) => {
   });
 
   return result;
+};
+
+const getAllAttempts = async (query: IQuery) => {
+  const limit = query?.limit ? Number(query.limit) : 10;
+  const page = query?.page ? Number(query.page) : 1;
+  const skip = (page - 1) * limit;
+
+  const sortBy = query?.sortBy ? query.sortBy : "createdAt";
+  const sortOrder = query?.sortOrder ? query.sortOrder : "desc";
+
+  const andConditions: AttemptWhereInput[] = [];
+
+  // Search by assessment title/description
+  if (query?.searchTerm) {
+    andConditions.push({
+      assessment: {
+        OR: [
+          {
+            title: {
+              contains: query.searchTerm,
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: query.searchTerm,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  // Filter by attempt status
+  if (query?.status) {
+    andConditions.push({
+      status: query.status as AttemptStatus,
+    });
+  }
+
+  // Filter by assessment
+  if (query?.assessmentId) {
+    andConditions.push({
+      assessmentId: query.assessmentId,
+    });
+  }
+
+  // Filter by candidate
+  if (query?.candidateId) {
+    andConditions.push({
+      candidateId: query.candidateId,
+    });
+  }
+
+  const result = await prisma.attempt.findMany({
+    where: {
+      AND: andConditions,
+    },
+    take: limit,
+    skip,
+    orderBy: {
+      [sortBy]: sortOrder,
+    },
+    include: {
+      assessment: true,
+      invitation: true,
+      candidate: true,
+    },
+  });
+
+  const totalAttemptCount = await prisma.attempt.count({
+    where: {
+      AND: andConditions,
+    },
+  });
+
+  return {
+    data: result,
+    meta: {
+      page,
+      limit,
+      total: totalAttemptCount,
+      totalPages: Math.ceil(totalAttemptCount / limit),
+    },
+  };
 };
 
 const getAttemptById = async (
@@ -202,6 +301,7 @@ const submitAttempt = async (attemptId: string, candidateId: string) => {
 
 export const attemptService = {
   startAttempt,
+  getAllAttempts,
   getMyAttempts,
   getAttemptById,
   submitAttempt,

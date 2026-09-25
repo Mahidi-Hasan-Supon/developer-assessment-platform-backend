@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import httpStatus from "http-status";
 import { catchAsync } from "../../utiles/catchAsync";
 import { sendResponse } from "../../utiles/sendResponse";
-import { answerService } from "./answer.sevice";
+import { answerService } from "./answer.service";
 
 const createAnswer = catchAsync(async (req: Request, res: Response) => {
   const candidateId = req.user?.userId as string;
