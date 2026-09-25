@@ -5,9 +5,11 @@ import {
   SubmissionStatus,
 } from "../../../../generated/prisma/enums";
 
-import { ICreateSubmission } from "./submission.interface";
+import { ICreateSubmission, IQuery } from "./submission.interface";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
+import { number } from "zod";
+import { SubmissionWhereInput } from "../../../../generated/prisma/models";
 
 const createSubmission = async (
   payload: ICreateSubmission,
@@ -76,15 +78,62 @@ const createSubmission = async (
   return result;
 };
 
-const getMySubmissions = async (candidateId: string) => {
+const getMySubmissions = async (candidateId: string, query: IQuery) => {
+  const limit = query?.limit ? Number(query.limit) : 10;
+  const page = query?.page ? Number(query.page) : 1;
+  const skip = (page - 1) * limit;
+
+  const sortBy = query?.sortBy ? query.sortBy : "createdAt";
+  const sortOrder = query?.sortOrder ? query.sortOrder : "desc";
+
+  const andConditions: SubmissionWhereInput[] = [];
+
+  // Candidate's submissions only
+  andConditions.push({
+    attempt: {
+      candidateId,
+    },
+  });
+
+  // Search by assessment title or description
+  if (query?.searchTerm) {
+    andConditions.push({
+      attempt: {
+        assessment: {
+          OR: [
+            {
+              title: {
+                contains: query.searchTerm,
+                mode: "insensitive",
+              },
+            },
+            {
+              description: {
+                contains: query.searchTerm,
+                mode: "insensitive",
+              },
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  // Filter by submission status
+  if (query?.status) {
+    andConditions.push({
+      status: query.status as SubmissionStatus,
+    });
+  }
+
   const result = await prisma.submission.findMany({
     where: {
-      attempt: {
-        candidateId,
-      },
+      AND: andConditions,
     },
+    take: limit,
+    skip,
     orderBy: {
-      createdAt: "desc",
+      [sortBy]: sortOrder,
     },
     include: {
       attempt: {
@@ -95,7 +144,21 @@ const getMySubmissions = async (candidateId: string) => {
     },
   });
 
-  return result;
+  const totalSubmissionCount = await prisma.submission.count({
+    where: {
+      AND: andConditions,
+    },
+  });
+
+  return {
+    data: result,
+    meta: {
+      page,
+      limit,
+      total: totalSubmissionCount,
+      totalPages: Math.ceil(totalSubmissionCount / limit),
+    },
+  };
 };
 
 const getSubmissionById = async (submissionId: string, candidateId: string) => {
@@ -133,14 +196,10 @@ const getSubmissionById = async (submissionId: string, candidateId: string) => {
 
 const submitSubmission = async (submissionId: string, candidateId: string) => {
   const submission = await prisma.submission.findUnique({
-    where: {
-      id: submissionId,
-    },
+    where: { id: submissionId },
     include: {
       attempt: {
-        include: {
-          assessment: true,
-        },
+        include: { assessment: true },
       },
     },
   });
@@ -203,68 +262,103 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
   const answerMap = new Map(answers.map((item) => [item.problemId, item]));
 
   let obtainedMarks = 0;
+  let pendingEvaluation = false;
+
+  // MCQ answer update promises
+  const answerUpdatePromises = [];
 
   // Evaluate answers
   for (const assessmentProblem of assessmentProblems) {
     const problem = assessmentProblem.problem;
-
     const candidateAnswer = answerMap.get(problem.id);
 
     // Candidate did not answer this problem
     if (!candidateAnswer) {
+      // Written / Coding answer না থাকলেও
+      // manual evaluation pending থাকবে
+      if (
+        problem.type === ProblemType.WRITTEN ||
+        problem.type === ProblemType.CODING
+      ) {
+        pendingEvaluation = true;
+      }
+
       continue;
     }
 
-    // MCQ auto evaluation
+    // MCQ → automatic evaluation
     if (problem.type === ProblemType.MCQ) {
       const isCorrect =
         candidateAnswer.answer?.trim() === problem.answer?.trim();
 
       const marks = isCorrect ? (assessmentProblem.marks ?? problem.marks) : 0;
 
-      await prisma.answer.update({
-        where: {
-          id: candidateAnswer.id,
-        },
-        data: {
-          marks,
-          isCorrect,
-          evaluatedAt: new Date(),
-        },
-      });
+      answerUpdatePromises.push(
+        prisma.answer.update({
+          where: {
+            id: candidateAnswer.id,
+          },
+          data: {
+            marks,
+            isCorrect,
+            evaluatedAt: new Date(),
+          },
+        }),
+      );
 
       obtainedMarks += marks;
     }
 
-    // Written / Coding
-    // এগুলো এখন manual/automated evaluation-এর জন্য pending থাকবে
+    // WRITTEN / CODING → manual evaluation pending
+    if (
+      problem.type === ProblemType.WRITTEN ||
+      problem.type === ProblemType.CODING
+    ) {
+      pendingEvaluation = true;
+    }
   }
 
-  // Update submission + attempt together
-  const result = await prisma.$transaction([
-    prisma.submission.update({
-      where: {
-        id: submissionId,
-      },
-      data: {
-        obtainedMarks,
-        status: SubmissionStatus.EVALUATED,
-        evaluatedAt: new Date(),
-      },
-    }),
+  // যদি Written / Coding evaluation pending থাকে,
+  // তাহলে Submission এখনো EVALUATED হবে না
+  const submissionStatus = pendingEvaluation
+    ? SubmissionStatus.PENDING
+    : SubmissionStatus.EVALUATED;
 
-    prisma.attempt.update({
-      where: {
-        id: submission.attempt.id,
-      },
-      data: {
-        status: AttemptStatus.SUBMITTED,
-        submittedAt: new Date(),
-      },
-    }),
+  const evaluatedAt = pendingEvaluation ? undefined : new Date();
+
+  // Update submission
+  const submissionUpdate = prisma.submission.update({
+    where: {
+      id: submissionId,
+    },
+    data: {
+      obtainedMarks,
+      status: submissionStatus,
+      evaluatedAt,
+    },
+  });
+
+  // Submit attempt
+  const attemptUpdate = prisma.attempt.update({
+    where: {
+      id: submission.attempt.id,
+    },
+    data: {
+      status: AttemptStatus.SUBMITTED,
+      submittedAt: new Date(),
+    },
+  });
+
+  // Update MCQ answers + submission + attempt together
+  const transactionResults = await prisma.$transaction([
+    ...answerUpdatePromises,
+    submissionUpdate,
+    attemptUpdate,
   ]);
 
-  return result[0];
+  // Last item = attempt update
+  // Second last item = submission update
+  return transactionResults[transactionResults.length - 2];
 };
 
 
@@ -273,5 +367,5 @@ export const submissionService = {
   createSubmission,
   getMySubmissions,
   getSubmissionById,
-  submitSubmission
+  submitSubmission,
 };

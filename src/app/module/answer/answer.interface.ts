@@ -1,8 +1,9 @@
-
-import { ProblemType } from "../../../../generated/prisma/enums";
-
 export interface ICreateAnswer {
   submissionId: string;
   problemId: string;
-  answer?: string;
+  answer: string;
+}
+
+export interface IEvaluateAnswer {
+  marks: number;
 }

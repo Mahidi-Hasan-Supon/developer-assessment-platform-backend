@@ -6,11 +6,11 @@ import { sendResponse } from "../../utiles/sendResponse";
 
 const createResult = catchAsync(
   async (req: Request, res: Response) => {
-    const candidateId = req.user?.userId as string;
+    const companyId = req.user?.userId as string;
 
     const result = await resultService.createResult(
       req.body,
-      candidateId,
+      companyId,
     );
 
     sendResponse(res, {
@@ -21,6 +21,29 @@ const createResult = catchAsync(
     });
   },
 );
+
+const evaluateResult = catchAsync(
+  async (req: Request, res: Response) => {
+    const { resultId } = req.params;
+
+    const companyId = req.user?.userId as string;
+
+    const result = await resultService.evaluateResult(
+      resultId as string,
+      companyId,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Result evaluated successfully",
+      data: result,
+    });
+  },
+);
+
+
+
 
 const getMyResults = catchAsync(
   async (req: Request, res: Response) => {
@@ -63,4 +86,5 @@ export const resultController = {
   createResult,
   getMyResults,
   getResultById,
+  evaluateResult
 };

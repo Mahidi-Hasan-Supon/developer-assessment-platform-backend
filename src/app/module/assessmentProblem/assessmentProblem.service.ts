@@ -26,6 +26,19 @@ const createAssessmentProblem = async (
   if (!assessment) {
     throw new AppError(httpStatus.NOT_FOUND, "Assessment not found");
   }
+  const existingOrder = await prisma.assessmentProblem.findFirst({
+    where: {
+      assessmentId,
+      order: payload.order,
+    },
+  });
+
+  if (existingOrder) {
+    throw new AppError(
+      httpStatus.CONFLICT,
+      `Order ${payload.order} is already used in this assessment`,
+    );
+  }
 
   // Check permission
   const isAdmin = role === UserRole.ADMIN;

@@ -1,11 +1,14 @@
 import httpStatus from "http-status";
-import { SubmissionStatus } from "../../../../generated/prisma/enums";
+import {
+  ResultStatus,
+  SubmissionStatus,
+} from "../../../../generated/prisma/enums";
 
 import { ICreateResult } from "./result.interface";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
 
-const createResult = async (payload: ICreateResult, candidateId: string) => {
+const createResult = async (payload: ICreateResult, companyId: string) => {
   const { submissionId } = payload;
 
   const submission = await prisma.submission.findUnique({
@@ -25,7 +28,8 @@ const createResult = async (payload: ICreateResult, candidateId: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "Submission not found");
   }
 
-  if (submission.attempt.candidateId !== candidateId) {
+  // Company can create result only for their own assessment
+  if (submission.attempt.assessment.companyId !== companyId) {
     throw new AppError(
       httpStatus.FORBIDDEN,
       "You do not have permission to create this result",
@@ -71,10 +75,46 @@ const createResult = async (payload: ICreateResult, candidateId: string) => {
   return result;
 };
 
+const evaluateResult = async (resultId: string, companyId: string) => {
+  const result = await prisma.result.findUnique({
+    where: { id: resultId },
+    include: { assessment: true, submission: true },
+  });
+  if (!result) {
+    throw new AppError(httpStatus.NOT_FOUND, "Result not found");
+  }
+  // Company can evaluate only their own assessment result
+  if (result.assessment.companyId !== companyId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "You do not have permission to evaluate this result",
+    );
+  }
+  if (result.status !== ResultStatus.PENDING) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "This result has already been evaluated",
+    );
+  }
+  const passMarks = result.assessment.passMarks;
+  const status =
+    result.obtainedMarks >= passMarks
+      ? ResultStatus.PASSED
+      : ResultStatus.FAILED;
+  const updatedResult = await prisma.result.update({
+    where: { id: resultId },
+    data: { status, evaluatedAt: new Date() },
+  });
+  return updatedResult;
+};
+
 const getMyResults = async (candidateId: string) => {
   const result = await prisma.result.findMany({
     where: {
       candidateId,
+      status: {
+        in: [ResultStatus.PASSED, ResultStatus.FAILED],
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -117,4 +157,5 @@ export const resultService = {
   createResult,
   getMyResults,
   getResultById,
+  evaluateResult,
 };

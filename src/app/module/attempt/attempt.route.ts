@@ -8,7 +8,7 @@ import { attemptValidation } from "./attempt.validation";
 const router = Router();
 
 router.post(
-  "/start",
+  "/",
   auth(UserRole.CANDIDATE),
   validationRequest(attemptValidation.createAttemptSchema),
   attemptController.startAttempt,

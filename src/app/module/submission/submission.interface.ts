@@ -10,3 +10,20 @@ export interface IUpdateSubmissionStatus {
 export interface ISubmitSubmission {
   submissionId: string;
 }
+
+
+
+ export interface IQuery {
+  searchTerm?: string;
+  page?: string;
+  limit?: string;
+  sortBy?: string;
+  sortOrder?: string;
+  status?: string;
+}
+
+
+
+
+
+

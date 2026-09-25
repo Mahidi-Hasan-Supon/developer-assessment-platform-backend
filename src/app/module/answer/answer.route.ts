@@ -19,5 +19,11 @@ router.get(
   auth(UserRole.CANDIDATE),
   answerController.getMyAnswers,
 );
+router.patch(
+  "/:answerId/evaluate",
+  auth(UserRole.COMPANY),
+  validationRequest(answerValidation.evaluateAnswerSchema),
+  answerController.evaluateAnswer,
+);
 
 export const answerRoute = router;

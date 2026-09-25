@@ -29,16 +29,17 @@ const getMySubmissions = catchAsync(
   async (req: Request, res: Response) => {
     const candidateId = req.user?.userId as string;
 
-    const result =
+    const {data , meta} =
       await submissionService.getMySubmissions(
         candidateId,
+        req.query
       );
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
       message: "Submissions retrieved successfully",
-      data: result,
+      data,meta
     });
   },
 );

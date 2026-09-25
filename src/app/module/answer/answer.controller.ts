@@ -4,46 +4,58 @@ import { catchAsync } from "../../utiles/catchAsync";
 import { sendResponse } from "../../utiles/sendResponse";
 import { answerService } from "./answer.sevice";
 
+const createAnswer = catchAsync(async (req: Request, res: Response) => {
+  const candidateId = req.user?.userId as string;
 
-const createAnswer = catchAsync(
-  async (req: Request, res: Response) => {
-    const candidateId = req.user?.userId as string;
+  const result = await answerService.createAnswer(req.body, candidateId);
 
-    const result = await answerService.createAnswer(
-      req.body,
-      candidateId,
-    );
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Answer submitted successfully",
+    data: result,
+  });
+});
 
-    sendResponse(res, {
-      statusCode: httpStatus.CREATED,
-      success: true,
-      message: "Answer submitted successfully",
-      data: result,
-    });
-  },
-);
+const getMyAnswers = catchAsync(async (req: Request, res: Response) => {
+  const { submissionId } = req.params;
 
-const getMyAnswers = catchAsync(
-  async (req: Request, res: Response) => {
-    const { submissionId } = req.params;
+  const candidateId = req.user?.userId as string;
 
-    const candidateId = req.user?.userId as string;
+  const result = await answerService.getMyAnswers(
+    submissionId as string,
+    candidateId,
+  );
 
-    const result = await answerService.getMyAnswers(
-      submissionId as string,
-      candidateId,
-    );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Answers retrieved successfully",
+    data: result,
+  });
+});
 
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Answers retrieved successfully",
-      data: result,
-    });
-  },
-);
+const evaluateAnswer = catchAsync(async (req: Request, res: Response) => {
+  const { answerId } = req.params;
+
+  const companyId = req.user?.userId as string;
+
+  const result = await answerService.evaluateAnswer(
+    answerId as string,
+    req.body,
+    companyId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Answer evaluated successfully",
+    data: result,
+  });
+});
 
 export const answerController = {
   createAnswer,
   getMyAnswers,
+  evaluateAnswer
 };

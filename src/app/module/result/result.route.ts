@@ -9,16 +9,18 @@ const router = Router();
 
 router.post(
   "/",
-  auth(UserRole.CANDIDATE),
+  auth(UserRole.COMPANY),
   validationRequest(resultValidation.createResultSchema),
   resultController.createResult,
 );
 
-router.get(
-  "/my",
-  auth(UserRole.CANDIDATE),
-  resultController.getMyResults,
+router.patch(
+  "/:resultId/evaluate",
+  auth(UserRole.COMPANY),
+  resultController.evaluateResult,
 );
+
+router.get("/my", auth(UserRole.CANDIDATE), resultController.getMyResults);
 
 router.get(
   "/:resultId",
