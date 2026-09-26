@@ -6,6 +6,7 @@ model Assessment {
   totalMarks      Int
   passMarks       Int
   status          AssessmentStatus @default(DRAFT)
+  price           Float            @default(0)
   deletedAt       DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt

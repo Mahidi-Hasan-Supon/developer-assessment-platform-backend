@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "assessments" ADD COLUMN     "price" DOUBLE PRECISION NOT NULL DEFAULT 0;

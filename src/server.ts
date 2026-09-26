@@ -2,6 +2,7 @@ import app from "./app";
 import config from "./app/config";
 import { prisma } from "./app/lib/prisma";
 import { redisClient } from "./app/lib/redis";
+import { createAdmin } from "./app/utiles/seed";
 
 const port = config.port;
 
@@ -12,6 +13,8 @@ async function main() {
 
     await redisClient.connect();
     console.log("Redis connected successfully");
+
+    await createAdmin()
 
     app.listen(port, () => {
       console.log(`Server starting port on ${port}`);
