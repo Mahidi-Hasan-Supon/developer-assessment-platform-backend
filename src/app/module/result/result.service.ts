@@ -103,19 +103,106 @@ const evaluateResult = async (resultId: string, companyId: string) => {
       : ResultStatus.FAILED;
   const updatedResult = await prisma.result.update({
     where: { id: resultId },
-    data: { status, evaluatedAt: new Date() },
+    data: {
+      status,
+      evaluatedAt: new Date(),
+    },
+    include: {
+      assessment: true,
+      submission: true,
+    },
   });
+
+  return updatedResult;
+  return updatedResult;
+};
+
+const publishResult = async (resultId: string, companyId: string) => {
+  const result = await prisma.result.findUnique({
+    where: {
+      id: resultId,
+    },
+    include: {
+      assessment: true,
+    },
+  });
+
+  if (!result) {
+    throw new AppError(httpStatus.NOT_FOUND, "Result not found");
+  }
+
+  if (result.assessment.companyId !== companyId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "You do not have permission to publish this result",
+    );
+  }
+
+  if (
+    result.status !== ResultStatus.PASSED &&
+    result.status !== ResultStatus.FAILED
+  ) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Result must be evaluated before publishing",
+    );
+  }
+
+  if (result.publishedAt) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Result has already been published",
+    );
+  }
+
+  const updatedResult = await prisma.result.update({
+    where: {
+      id: resultId,
+    },
+    data: {
+      publishedAt: new Date(),
+    },
+    include: {
+      assessment: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          durationMinutes: true,
+          totalMarks: true,
+          passMarks: true,
+          price: true,
+        },
+      },
+      candidate: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      submission: {
+        select: {
+          id: true,
+          submittedAt: true,
+          totalMarks: true,
+          obtainedMarks: true,
+        },
+      },
+    },
+  });
+
   return updatedResult;
 };
 
 const getMyResults = async (candidateId: string) => {
-  const result = await prisma.result.findMany({
+  const allResults = await prisma.result.findMany({
     where: {
+      
       candidateId,
-      status: {
-        in: [ResultStatus.PASSED, ResultStatus.FAILED],
-      },
+      
     },
+
     orderBy: {
       createdAt: "desc",
     },
@@ -125,7 +212,22 @@ const getMyResults = async (candidateId: string) => {
     },
   });
 
-  return result;
+  if (allResults.length === 0) {
+    throw new AppError(httpStatus.NOT_FOUND, "You have no result yet");
+  }
+
+  const publishedResults = allResults.filter(
+    (result) => result.publishedAt !== null,
+  );
+
+  if (publishedResults.length === 0) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Your result has not been published yet",
+    );
+  }
+
+  return publishedResults;
 };
 
 const getResultById = async (resultId: string, candidateId: string) => {
@@ -138,6 +240,13 @@ const getResultById = async (resultId: string, candidateId: string) => {
       submission: true,
     },
   });
+
+  if (!result?.publishedAt) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Your result has not been published yet",
+    );
+  }
 
   if (!result) {
     throw new AppError(httpStatus.NOT_FOUND, "Result not found");
@@ -158,4 +267,5 @@ export const resultService = {
   getMyResults,
   getResultById,
   evaluateResult,
+  publishResult,
 };

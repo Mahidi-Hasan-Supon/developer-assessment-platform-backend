@@ -20,6 +20,12 @@ router.patch(
   resultController.evaluateResult,
 );
 
+router.patch(
+  "/publish/:resultId",
+  auth(UserRole.COMPANY),
+  resultController.publishResult,
+);
+
 router.get("/my", auth(UserRole.CANDIDATE), resultController.getMyResults);
 
 router.get(

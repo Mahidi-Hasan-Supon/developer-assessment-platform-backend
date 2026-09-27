@@ -15,7 +15,7 @@ router.post(
 );
 
 router.get(
-  "/submission/:submissionId",
+  "/my/:submissionId",
   auth(UserRole.CANDIDATE),
   answerController.getMyAnswers,
 );
