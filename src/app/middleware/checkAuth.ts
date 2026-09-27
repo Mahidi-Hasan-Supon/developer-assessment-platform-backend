@@ -6,6 +6,7 @@ import type { JwtPayload } from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
 import httpStatus from "http-status";
 import { UserRole } from "../../../generated/prisma/enums";
+import { AppError } from "../utiles/appError";
 
 export interface RequestUser {
   name: string;
@@ -14,7 +15,7 @@ export interface RequestUser {
   userId: string;
 }
 
-// namespace
+
 declare global {
   namespace Express {
     interface Request {
@@ -30,22 +31,24 @@ export const auth = (...requiredRole: UserRole[]) => {
       : req.headers.authorization?.startsWith("Bearer")
         ? req.headers.authorization?.split(" ")[1]
         : req.headers.authorization;
-    // console.log(token);
+
     if (!token) {
-      throw new Error("You are not log in");
+      throw new AppError(httpStatus.UNAUTHORIZED, "You are not logged in");
     }
+
     const verified = jwtUtils.verifyToken(token, config.jwt_access_secret);
 
     if (!verified.success) {
-      throw new Error(verified.error);
+      throw new AppError(httpStatus.UNAUTHORIZED, verified.error);
     }
+
     const { email, name, userId, role } = verified.data as JwtPayload;
 
     if (requiredRole.length && !requiredRole.includes(role)) {
-      return res.status(403).json({
+      return res.status(httpStatus.FORBIDDEN).json({
         success: false,
         statusCode: httpStatus.FORBIDDEN,
-        message: "Forbidden,you don't have permission this user",
+        message: "Forbidden, you don't have permission",
       });
     }
 
@@ -57,11 +60,13 @@ export const auth = (...requiredRole: UserRole[]) => {
         role,
       },
     });
+
     if (!user) {
-      throw new Error("Please Login in");
+      throw new AppError(httpStatus.UNAUTHORIZED, "Please login again");
     }
+
     if (user.status === "BLOCKED") {
-      throw new Error("YOU account has been blocked");
+      throw new AppError(httpStatus.FORBIDDEN, "Your account has been blocked");
     }
 
     req.user = {
@@ -70,6 +75,7 @@ export const auth = (...requiredRole: UserRole[]) => {
       role,
       email,
     };
+
     next();
   });
 };
