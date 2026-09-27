@@ -160,6 +160,57 @@ const getMyAnswers = async (submissionId: string, candidateId: string) => {
   return result;
 };
 
+const getSubmissionAnswers = async (
+  submissionId: string,
+  companyId: string,
+) => {
+  const submission = await prisma.submission.findUnique({
+    where: { id: submissionId },
+    include: {
+      attempt: {
+        include: {
+          assessment: true,
+        },
+      },
+    },
+  });
+
+  if (!submission) {
+    throw new AppError(httpStatus.NOT_FOUND, "Submission not found");
+  }
+
+  if (submission.attempt.assessment.companyId !== companyId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "You do not have permission to view this submission",
+    );
+  }
+
+  const result = await prisma.answer.findMany({
+    where: {
+      submissionId,
+    },
+    include: {
+      problem: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          type: true,
+          difficulty: true,
+          marks: true,
+          options: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  return result;
+};
+
 const evaluateAnswer = async (
   answerId: string,
   payload: IEvaluateAnswer,
@@ -291,4 +342,5 @@ export const answerService = {
   createAnswer,
   getMyAnswers,
   evaluateAnswer,
+  getSubmissionAnswers
 };

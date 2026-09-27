@@ -8,6 +8,7 @@ import {
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
 import { AssessmentProblemWhereInput } from "../../../../generated/prisma/models";
+import { tr } from "zod/locales";
 
 const createAssessmentProblem = async (
   assessmentId: string,
@@ -94,6 +95,10 @@ const createAssessmentProblem = async (
       order: payload.order,
       marks: payload.marks,
     },
+     include:{
+      problem:true,
+      assessment:true
+     },
   });
 
   return result;

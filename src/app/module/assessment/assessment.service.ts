@@ -20,6 +20,7 @@ const createAssessment = async (
       durationMinutes: payload.durationMinutes,
       totalMarks: payload.totalMarks,
       passMarks: payload.passMarks,
+      price:payload.price,
       companyId,
     },
   });

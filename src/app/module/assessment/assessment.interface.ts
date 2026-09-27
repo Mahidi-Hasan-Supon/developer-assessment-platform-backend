@@ -6,6 +6,7 @@ export interface ICreateAssessment {
   durationMinutes: number;
   totalMarks: number;
   passMarks: number;
+  price:number
 }
 
 export interface IUpdateAssessment {

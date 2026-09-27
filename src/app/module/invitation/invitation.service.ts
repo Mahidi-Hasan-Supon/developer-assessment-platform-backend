@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import { InvitationStatus, UserRole } from "../../../../generated/prisma/enums";
+import { AssessmentStatus, InvitationStatus, UserRole } from "../../../../generated/prisma/enums";
 import {
   ICreateInvitation,
   IQuery,
@@ -27,6 +27,12 @@ const createInvitation = async (payload: ICreateInvitation, userId: string) => {
     throw new AppError(
       httpStatus.FORBIDDEN,
       "You do not have permission to invite candidates to this assessment",
+    );
+  }
+  if (assessment.status !== AssessmentStatus.PUBLISHED) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Cannot send invitation for an unpublished assessment",
     );
   }
 
@@ -65,6 +71,27 @@ const createInvitation = async (payload: ICreateInvitation, userId: string) => {
       assessmentId,
       candidateId,
       expiresAt,
+    },
+    include: {
+      candidate: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      assessment: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          durationMinutes: true,
+          totalMarks: true,
+          passMarks: true,
+          price: true,
+          status: true,
+        },
+      },
     },
   });
 
@@ -249,6 +276,27 @@ const updateInvitationStatus = async (
       ...(payload.status === InvitationStatus.ACCEPTED && {
         acceptedAt: new Date(),
       }),
+    },
+    include: {
+      candidate: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      assessment: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          durationMinutes: true,
+          totalMarks: true,
+          passMarks: true,
+          price: true,
+          status: true,
+        },
+      },
     },
   });
 

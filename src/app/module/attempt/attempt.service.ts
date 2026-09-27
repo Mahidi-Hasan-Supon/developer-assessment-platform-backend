@@ -3,6 +3,7 @@ import {
   AssessmentStatus,
   AttemptStatus,
   InvitationStatus,
+  PaymentStatus,
   UserRole,
 } from "../../../../generated/prisma/enums";
 
@@ -60,6 +61,31 @@ const startAttempt = async (payload: ICreateAttempt, candidateId: string) => {
       "This assessment is not available for attempt",
     );
   }
+
+  // 6. Check payment for paid assessment
+  // 6. Check payment for paid assessment
+console.log("ASSESSMENT PRICE:", invitation.assessment.price);
+console.log("ASSESSMENT ID:", invitation.assessmentId);
+
+if (invitation.assessment.price > 0) {
+  const payment = await prisma.payment.findFirst({
+    where: {
+      userId: candidateId,
+      assessmentId: invitation.assessmentId,
+      status: PaymentStatus.SUCCESS,
+    },
+  });
+
+  console.log("PAYMENT FOUND:", payment);
+
+  if (!payment) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Please complete payment before starting the assessment",
+    );
+  }
+}
+
 
   // 5. Check if attempt already exists
   const existingAttempt = await prisma.attempt.findUnique({

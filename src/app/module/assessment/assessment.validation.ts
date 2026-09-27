@@ -30,6 +30,7 @@ const createAssessmentSchema = z
       .number()
       .int("Pass marks must be an integer")
       .positive("Pass marks must be greater than 0"),
+      price: z.number().min(0),
   })
   .refine((data) => data.passMarks <= data.totalMarks, {
     message: "Pass marks cannot be greater than total marks",

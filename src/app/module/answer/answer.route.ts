@@ -20,6 +20,12 @@ router.get(
   answerController.getMyAnswers,
 );
 
+router.get(
+  "/submission/:submissionId",
+  auth(UserRole.COMPANY),
+  answerController.getSubmissionAnswers,
+);
+
 router.patch(
   "/:answerId/evaluate",
   auth(UserRole.COMPANY),

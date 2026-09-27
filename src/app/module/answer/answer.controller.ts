@@ -35,6 +35,23 @@ const getMyAnswers = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getSubmissionAnswers = catchAsync(async (req: Request, res: Response) => {
+  const { submissionId } = req.params;
+  const companyId = req.user?.userId;
+
+  const result = await answerService.getSubmissionAnswers(
+    submissionId as string,
+    companyId!,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Submission answers retrieved successfully",
+    data: result,
+  });
+});
+
 const evaluateAnswer = catchAsync(async (req: Request, res: Response) => {
   const { answerId } = req.params;
 
@@ -57,5 +74,6 @@ const evaluateAnswer = catchAsync(async (req: Request, res: Response) => {
 export const answerController = {
   createAnswer,
   getMyAnswers,
-  evaluateAnswer
+  evaluateAnswer,
+  getSubmissionAnswers
 };

@@ -2,15 +2,13 @@ import httpStatus from "http-status";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
 import {
+  AssessmentStatus,
   PaymentProvider,
   PaymentStatus,
 } from "../../../../generated/prisma/enums";
 import config from "../../config";
 import { getBkashIdToken } from "../../lib/bkash";
 
-// =========================
-// CREATE PAYMENT
-// =========================
 
 const createPayment = async (assessmentId: string, userId: string) => {
   // Check assessment
@@ -23,6 +21,12 @@ const createPayment = async (assessmentId: string, userId: string) => {
 
   if (!assessment) {
     throw new AppError(httpStatus.NOT_FOUND, "Assessment not found");
+  }
+  if (assessment.status !== AssessmentStatus.PUBLISHED) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "This assessment is not published yet",
+    );
   }
 
   // Free assessment
@@ -67,7 +71,9 @@ const createPayment = async (assessmentId: string, userId: string) => {
         "bKash ID token not found",
       );
     }
+ 
 
+    console.log("BKASH CALLBACK URL:", config.bkash_callback_url);
     // Create bKash payment
     const bkashResponse = await fetch(
       `${config.bkash_base_url}/tokenized/checkout/create`,
@@ -147,10 +153,7 @@ const createPayment = async (assessmentId: string, userId: string) => {
   }
 };
 
-// =========================
-// BKASH CALLBACK
-// =========================
-
+ 
 const handleBkashCallback = async (paymentID: string, status: string) => {
   if (!paymentID) {
     throw new AppError(httpStatus.BAD_REQUEST, "bKash payment ID is required");
