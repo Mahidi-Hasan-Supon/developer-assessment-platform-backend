@@ -43,39 +43,6 @@ const getMyNotifications = async (userId: string) => {
   return result;
 };
 
-const updateNotification = async (
-  id: string,
-  userId: string,
-  payload: {
-    title?: string;
-    message?: string;
-    type?: NotificationType;
-  }
-) => {
-  const notification =
-    await prisma.notification.findFirst({
-      where: {
-        id,
-        userId,
-      },
-    });
-
-  if (!notification) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      "Notification not found"
-    );
-  }
-
-  const result = await prisma.notification.update({
-    where: {
-      id,
-    },
-    data: payload,
-  });
-
-  return result;
-};
 
 const markAsRead = async (
   id: string,
@@ -140,7 +107,7 @@ const deleteNotification = async (
 export const notificationService = {
   createNotification,
   getMyNotifications,
-  updateNotification,
+
   markAsRead,
   deleteNotification,
 };

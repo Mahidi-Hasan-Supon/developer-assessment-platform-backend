@@ -40,26 +40,7 @@ const getMyNotifications = catchAsync(
   }
 );
 
-const updateNotification = catchAsync(
-  async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const userId = req.user?.userId;
 
-    const result =
-      await notificationService.updateNotification(
-        id as string,
-        userId!,
-        req.body
-      );
-
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Notification updated successfully",
-      data: result,
-    });
-  }
-);
 
 const markAsRead = catchAsync(
   async (req: Request, res: Response) => {
@@ -103,7 +84,6 @@ const deleteNotification = catchAsync(
 export const notificationController = {
   createNotification,
   getMyNotifications,
-  updateNotification,
   markAsRead,
   deleteNotification,
 };

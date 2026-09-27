@@ -26,15 +26,7 @@ router.get(
   notificationController.getMyNotifications
 );
 
-router.patch(
-  "/:id",
-  auth(
-    UserRole.ADMIN,
-    UserRole.CANDIDATE,
-    UserRole.COMPANY
-  ),
-  notificationController.updateNotification
-);
+
 
 router.patch(
   "/:id/read",
