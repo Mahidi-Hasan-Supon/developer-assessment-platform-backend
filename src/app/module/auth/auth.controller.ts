@@ -45,7 +45,7 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
     data: {
       user,
       accessToken,
-      refreshToken
+      refreshToken,
     },
   });
 });
@@ -177,6 +177,18 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
     },
   });
 });
+const logOut = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "User logout successfully",
+      data: null,
+    });
+  },
+);
 
 export const authController = {
   registerUser,
@@ -186,5 +198,6 @@ export const authController = {
   getMe,
   forgotPassword,
   resetPassword,
-  googleLogin
+  googleLogin,
+  logOut
 };

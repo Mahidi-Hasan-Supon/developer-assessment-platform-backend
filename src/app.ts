@@ -22,7 +22,10 @@ const app: Application = express();
 
 app.use(
   cors({
-    origin: config.backend_url,
+    origin:[
+     config.frontend_url,
+      config.backend_url,
+    ] ,
     credentials: true,
   }),
 );
