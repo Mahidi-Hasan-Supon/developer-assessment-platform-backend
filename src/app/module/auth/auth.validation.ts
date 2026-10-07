@@ -5,7 +5,7 @@ const userRegisterSchema = z.object({
   name: z
     .string("Not A String!!!!!")
     .min(3, "Name must at least 3 characters long!!!")
-    .max(10),
+    .max(30),
   email: z.email("Not email!!"),
   password: z
     .string()
@@ -50,10 +50,15 @@ const resetZodSchema = z.object({
     otp:z.string().length(6)
 });
 
+export const resendForgotPasswordOtp = z.object({
+  email: z.string().email(),
+});
+
 export const userValidation = {
   userRegisterSchema,
   verifyUserEmail,
   loginZodSchema,
   forgetZodSchema,
+  resendForgotPasswordOtp,
   resetZodSchema
 };

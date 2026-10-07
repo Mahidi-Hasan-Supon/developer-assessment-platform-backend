@@ -15,7 +15,6 @@ export interface RequestUser {
   userId: string;
 }
 
-
 declare global {
   namespace Express {
     interface Request {
@@ -35,6 +34,8 @@ export const auth = (...requiredRole: UserRole[]) => {
     if (!token) {
       throw new AppError(httpStatus.UNAUTHORIZED, "You are not logged in");
     }
+    // console.log("TOKEN:", token);
+    // console.log("ACCESS SECRET EXISTS:", !!config.jwt_access_secret);
 
     const verified = jwtUtils.verifyToken(token, config.jwt_access_secret);
 

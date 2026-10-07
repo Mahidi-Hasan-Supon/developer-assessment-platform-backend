@@ -42,4 +42,11 @@ router.post(
 router.post("/google-login", authController.googleLogin);
 router.post("/logOut", authController.logOut);
 
+router.post("/resend-verification-otp", authController.resendVerificationOtp);
+router.post(
+  "/resend-forgot-password-otp",
+  validationRequest(userValidation.resendForgotPasswordOtp),
+  authController.resendForgotPasswordOtp,
+);
+
 export const authRouter = router;

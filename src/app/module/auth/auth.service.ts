@@ -60,6 +60,10 @@ const registerUser = async (payload: IRegisterPayload) => {
   // OTP Redis key
   const otpKey = `assessment:register:otp:${email}`;
 
+  if (config.node_env === "development") {
+    console.log(`[dev] ${email} : ${otpValue}`);
+  }
+
   await redisClient.set(otpKey, otpValue, {
     expiration: {
       type: "EX",
@@ -69,7 +73,7 @@ const registerUser = async (payload: IRegisterPayload) => {
 
   // Temporary registration data
   const registrationKey = `assessment:register:data:${email}`;
-  console.log("REGISTER PAYLOAD ROLE:", role);
+  // console.log("REGISTER PAYLOAD ROLE:", role);
   const registrationData = {
     name,
     email: email,
@@ -132,6 +136,9 @@ const verifyEmail = async (payload: IVerifyPayload) => {
 
   const redisOtp = await redisClient.get(otpKey);
 
+  console.log("otp", redisOtp);
+  // console.log("otp", otpKey);
+
   if (!redisOtp) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid or expired OTP");
   }
@@ -156,11 +163,9 @@ const verifyEmail = async (payload: IVerifyPayload) => {
     redisRegistrationData,
   );
 
-  const isCandidate =
-  registrationPayload.role === UserRole.CANDIDATE;
+  const isCandidate = registrationPayload.role === UserRole.CANDIDATE;
 
-const isCompany =
-  registrationPayload.role === UserRole.COMPANY;
+  const isCompany = registrationPayload.role === UserRole.COMPANY;
 
   // Create user after OTP verification
   const createdUser = await prisma.user.create({
@@ -171,30 +176,30 @@ const isCompany =
       role: registrationPayload.role,
       status: UserStatus.ACTIVE,
       emailVerified: true,
-         ...(isCandidate && {
-      candidateProfile: {
-        create: {},
-      },
-    }),
+      ...(isCandidate && {
+        candidateProfile: {
+          create: {},
+        },
+      }),
 
-    ...(isCompany && {
-      companyProfile: {
-        create: {},
-      },
-    }),
-  },
+      ...(isCompany && {
+        companyProfile: {
+          create: {},
+        },
+      }),
+    },
 
     omit: {
       password: true,
     },
     include: {
       candidateProfile: true,
-      companyProfile:true
+      companyProfile: true,
     },
   });
-  console.log("REGISTRATION ROLE:", registrationPayload.role);
-  console.log("CANDIDATE ROLE:", UserRole.CANDIDATE);
-  console.log("IS CANDIDATE:", registrationPayload.role === UserRole.CANDIDATE);
+  // console.log("REGISTRATION ROLE:", registrationPayload.role);
+  // console.log("CANDIDATE ROLE:", UserRole.CANDIDATE);
+  // console.log("IS CANDIDATE:", registrationPayload.role === UserRole.CANDIDATE);
 
   // Delete temporary registration data
   await redisClient.del(registrationKey);
@@ -245,6 +250,61 @@ const isCompany =
     accessToken,
     refreshToken,
   };
+};
+
+const resendVerificationOtp = async (email: string) => {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Check temporary registration data
+  const registrationKey = `assessment:register:data:${normalizedEmail}`;
+
+  const registrationData = await redisClient.get(registrationKey);
+
+  if (!registrationData) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Registration session has expired. Please register again.",
+    );
+  }
+
+  const parsedData = JSON.parse(registrationData);
+
+  // Generate new OTP
+  const otpValue = crypto.randomInt(100000, 1000000).toString();
+
+  const expirationSeconds = 5 * 60;
+
+  // Update OTP
+  const otpKey = `assessment:register:otp:${normalizedEmail}`;
+
+  await redisClient.set(otpKey, otpValue, {
+    expiration: {
+      type: "EX",
+      value: expirationSeconds,
+    },
+  });
+
+  // Send new OTP email
+  const templatePath = path.join(
+    process.cwd(),
+    "src/app/templates/registration-user-otp.ejs",
+  );
+
+  const templateData = {
+    name: parsedData.name,
+    email: normalizedEmail,
+    otp: otpValue,
+    expirationMinutes: expirationSeconds / 60,
+  };
+
+  const html = await ejs.renderFile(templatePath, templateData);
+
+  await transporter.sendMail({
+    from: config.email_sender,
+    to: normalizedEmail,
+    subject: "Email Verification",
+    html,
+  });
 };
 
 const loginUser = async (payload: ILoginPayload) => {
@@ -549,7 +609,11 @@ const googleLogin = async (payload: IGooglePayload) => {
     });
 
     googleIdTokenPayload = ticket.getPayload();
+
+    // console.log("GOOGLE TOKEN VERIFIED");
+    // console.log("GOOGLE PAYLOAD:", googleIdTokenPayload);
   } catch (error) {
+    console.error("GOOGLE VERIFY ERROR:", error);
     throw new AppError(
       httpStatus.UNAUTHORIZED,
       "Google token is invalid or expired",
@@ -706,6 +770,65 @@ const googleLogin = async (payload: IGooglePayload) => {
   };
 };
 
+const resendForgotPasswordOtp = async (email: string) => {
+  const normalizedEmail = email.toLowerCase();
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email: normalizedEmail,
+    },
+  });
+
+  if (!user || user.deletedAt || user.status !== UserStatus.ACTIVE) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (!user.emailVerified) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Please verify your email first",
+    );
+  }
+
+  const otpValue = crypto.randomInt(100000, 1000000).toString();
+
+  const otpKey = `assessment:forget:password:otp${user.email}`;
+
+  const expiredTime = 5 * 60;
+
+  await redisClient.set(otpKey, otpValue, {
+    expiration: {
+      type: "EX",
+      value: expiredTime,
+    },
+  });
+
+  const templatePath = path.join(
+    process.cwd(),
+    "src/app/templates/forget-password-otp.ejs",
+  );
+
+  const templateData = {
+    name: user.name,
+    otp: otpValue,
+    year: new Date().getFullYear(),
+    expirationMinutes: expiredTime / 60,
+  };
+
+  const html = await ejs.renderFile(templatePath, templateData);
+
+  await transporter.sendMail({
+    from: `"Development Assessment Platform" <${config.email_sender}>`,
+    to: user.email,
+    subject: "Password forget OTP",
+    html,
+  });
+
+  return {
+    message: "A new password reset OTP has been sent to your email",
+  };
+};
+
 export const authService = {
   registerUser,
   verifyEmail,
@@ -714,5 +837,7 @@ export const authService = {
   refreshToken,
   forgotPassword,
   resetPassword,
+  resendVerificationOtp,
   googleLogin,
+  resendForgotPasswordOtp
 };
