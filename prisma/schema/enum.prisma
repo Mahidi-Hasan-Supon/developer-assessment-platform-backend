@@ -49,6 +49,11 @@ enum AttemptStatus {
   EXPIRED
   AUTO_SUBMITTED
 }
+enum CompanyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
 
 enum NotificationType {
   INVITATION

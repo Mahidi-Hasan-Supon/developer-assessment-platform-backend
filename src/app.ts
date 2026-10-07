@@ -17,15 +17,13 @@ import { resultRoute } from "./app/module/result/result.route";
 import { paymentRoutes } from "./app/module/payment/payment.route";
 import { reportRoutes } from "./app/module/report/report.route";
 import { analyticsRoutes } from "./app/module/analytics/analytics.route";
+import { companyRouter } from "./app/module/company/company.route";
 
 const app: Application = express();
 
 app.use(
   cors({
-    origin:[
-     config.frontend_url,
-      config.backend_url,
-    ] ,
+    origin: [config.frontend_url, config.backend_url],
     credentials: true,
   }),
 );
@@ -33,11 +31,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-
-app.use("/api/v1/auth",authRouter);
-app.use("/api/v1/problem",problemRouter);
-app.use("/api/v1/assessment",assessmentRoutes);
-app.use("/api/v1/assessmentProblem",assessmentProblemRoute);
+app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/company", companyRouter);
+app.use("/api/v1/problem", problemRouter);
+app.use("/api/v1/assessment", assessmentRoutes);
+app.use("/api/v1/assessmentProblem", assessmentProblemRoute);
 app.use("/api/v1/invitation", invitationRoute);
 app.use("/api/v1/attempt", attemptRoute);
 app.use("/api/v1/submission", submissionRoute);

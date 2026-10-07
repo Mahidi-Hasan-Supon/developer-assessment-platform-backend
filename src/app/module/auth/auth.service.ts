@@ -24,7 +24,6 @@ import path from "path";
 import ejs from "ejs";
 import { TokenPayload } from "google-auth-library";
 import { googleClient } from "../../lib/googleAuth";
-import { tr } from "zod/locales";
 
 const registerUser = async (payload: IRegisterPayload) => {
   const { name, password, role } = payload;

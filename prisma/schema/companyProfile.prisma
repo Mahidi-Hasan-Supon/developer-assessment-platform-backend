@@ -1,9 +1,9 @@
 model CompanyProfile {
   id          String   @id @default(uuid())
   companyName String?
-  logo        String?
   description String?
   website     String?
+  status CompanyStatus @default(PENDING)
   location    String?
   industry    String?
   createdAt   DateTime @default(now())
