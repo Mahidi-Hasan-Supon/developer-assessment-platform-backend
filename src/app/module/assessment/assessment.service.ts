@@ -20,7 +20,7 @@ const createAssessment = async (
       durationMinutes: payload.durationMinutes,
       totalMarks: payload.totalMarks,
       passMarks: payload.passMarks,
-      price:payload.price,
+      price: payload.price,
       companyId,
     },
   });
@@ -28,7 +28,11 @@ const createAssessment = async (
   return result;
 };
 
-const getAllAssessments = async (query: IQuery) => {
+const getAllAssessments = async (
+  query: IQuery,
+  userId: string,
+  role: UserRole,
+) => {
   const limit = query.limit ? Number(query.limit) : 10;
   const page = query.page ? Number(query.page) : 1;
   const skip = (page - 1) * limit;
@@ -38,7 +42,7 @@ const getAllAssessments = async (query: IQuery) => {
 
   const andConditions: AssessmentWhereInput[] = [];
 
-  // Searching
+  // Search
   if (query.searchTerm) {
     andConditions.push({
       OR: [
@@ -58,20 +62,29 @@ const getAllAssessments = async (query: IQuery) => {
     });
   }
 
-  // Filtering
+  // Status filter
   if (query.status) {
     andConditions.push({
       status: query.status as AssessmentStatus,
     });
   }
 
-  if (query.companyId) {
+  // Role based filtering
+  if (role === UserRole.COMPANY) {
     andConditions.push({
-      companyId: query.companyId,
+      companyId: userId,
     });
   }
 
-  // Soft deleted বাদ
+  if (role === UserRole.CANDIDATE) {
+    andConditions.push({
+      status: AssessmentStatus.PUBLISHED,
+    });
+  }
+
+  // Admin → no company/status restriction
+
+  // Soft delete
   andConditions.push({
     deletedAt: null,
   });
@@ -80,10 +93,8 @@ const getAllAssessments = async (query: IQuery) => {
     where: {
       AND: andConditions,
     },
-
     take: limit,
     skip,
-
     orderBy: {
       [sortBy]: sortOrder,
     },
@@ -190,7 +201,6 @@ const updateAssessment = async (
 
   return result;
 };
-
 
 const deleteAssessment = async (id: string, userId: string, role: UserRole) => {
   const assessment = await prisma.assessment.findFirst({
