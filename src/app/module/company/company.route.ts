@@ -15,4 +15,16 @@ router.post(
   companyController.createCompanyProfile,
 );
 
+router.get(
+  "/applications",
+  auth(UserRole.ADMIN),
+  companyController.getCompanyApplications,
+);
+router.patch(
+  "/applications/:id/status",
+  auth(UserRole.ADMIN),
+  validationRequest(companyValidation.updateCompanyStatusSchema),
+  companyController.updateCompanyApplicationStatus,
+);
+
 export const companyRouter = router;

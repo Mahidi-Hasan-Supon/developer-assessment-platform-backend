@@ -4,6 +4,7 @@ model CompanyProfile {
   description String?
   website     String?
   status CompanyStatus @default(PENDING)
+  reviewNote String?
   location    String?
   industry    String?
   createdAt   DateTime @default(now())
