@@ -2,10 +2,10 @@ import httpStatus from "http-status";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
 import { CompanyStatus, UserRole } from "../../../../generated/prisma/enums";
-import path from 'path';
+import path from "path";
 import { transporter } from "../../lib/nodemailer";
 import config from "../../config";
-import ejs from 'ejs';
+import ejs from "ejs";
 
 type TCompanyProfilePayload = {
   companyName: string;
@@ -88,7 +88,6 @@ const getCompanyApplications = async (status?: CompanyStatus) => {
     },
   });
 };
-
 
 const updateCompanyApplicationStatus = async (
   companyProfileId: string,
@@ -179,10 +178,70 @@ const updateCompanyApplicationStatus = async (
   return updatedCompany;
 };
 
+// user get by admin company
 
+
+const getCandidates = async (query: {
+  searchTerm?: string;
+  page?: string;
+  limit?: string;
+}) => {
+  const page = Math.max(1, Number(query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(query.limit) || 10));
+  const skip = (page - 1) * limit;
+
+  const where = {
+    role: UserRole.CANDIDATE,
+    deletedAt: null,
+    ...(query.searchTerm?.trim()
+      ? {
+          OR: [
+            {
+              name: {
+                contains: query.searchTerm.trim(),
+                mode: "insensitive" as const,
+              },
+            },
+            {
+              email: {
+                contains: query.searchTerm.trim(),
+                mode: "insensitive" as const,
+              },
+            },
+          ],
+        }
+      : {}),
+  };
+
+  const [data, total] = await prisma.$transaction([
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+      skip,
+      take: limit,
+      orderBy: { name: "asc" },
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
 
 export const companyService = {
   createCompanyProfile,
   getCompanyApplications,
   updateCompanyApplicationStatus,
+  getCandidates
 };

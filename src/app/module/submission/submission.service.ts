@@ -195,11 +195,18 @@ const getSubmissionById = async (submissionId: string, candidateId: string) => {
 };
 
 const submitSubmission = async (submissionId: string, candidateId: string) => {
+  console.log("🔥 SUBMIT SUBMISSION SERVICE CALLED", {
+    submissionId,
+    candidateId,
+  });
+  console.log("SUBMIT SUBMISSION FUNCTION CALLED", submissionId);
   const submission = await prisma.submission.findUnique({
     where: { id: submissionId },
     include: {
       attempt: {
-        include: { assessment: true },
+        include: {
+          assessment: true,
+        },
       },
     },
   });
@@ -208,7 +215,6 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "Submission not found");
   }
 
-  // Candidate ownership
   if (submission.attempt.candidateId !== candidateId) {
     throw new AppError(
       httpStatus.FORBIDDEN,
@@ -216,7 +222,6 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
     );
   }
 
-  // Submission already evaluated
   if (submission.status === SubmissionStatus.EVALUATED) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
@@ -224,7 +229,6 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
     );
   }
 
-  // Attempt must be in progress
   if (submission.attempt.status !== AttemptStatus.IN_PROGRESS) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
@@ -232,7 +236,6 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
     );
   }
 
-  // Get all problems of this assessment
   const assessmentProblems = await prisma.assessmentProblem.findMany({
     where: {
       assessmentId: submission.attempt.assessmentId,
@@ -245,6 +248,17 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
     },
   });
 
+  console.log(
+    "🔥 ASSESSMENT PROBLEMS:",
+    assessmentProblems.map((item) => ({
+      problemId: item.problem.id,
+      title: item.problem.title,
+      type: item.problem.type,
+      correctAnswer: item.problem.answer,
+      marks: item.marks,
+    })),
+  );
+
   if (assessmentProblems.length === 0) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
@@ -252,30 +266,40 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
     );
   }
 
-  // Get candidate answers
   const answers = await prisma.answer.findMany({
     where: {
       submissionId,
     },
   });
 
-  const answerMap = new Map(answers.map((item) => [item.problemId, item]));
+  const answerMap = new Map(
+    answers.map((answer) => [answer.problemId, answer]),
+  );
 
   let obtainedMarks = 0;
   let pendingEvaluation = false;
 
-  // MCQ answer update promises
   const answerUpdatePromises = [];
 
-  // Evaluate answers
+  const normalizeAnswer = (value: unknown): string =>
+    String(value ?? "")
+      .trim()
+      .toLowerCase();
+
   for (const assessmentProblem of assessmentProblems) {
     const problem = assessmentProblem.problem;
     const candidateAnswer = answerMap.get(problem.id);
+    console.log("🔥 ENTERED MCQ BLOCK:", problem.id);
 
-    // Candidate did not answer this problem
+    console.log("🔥 LOOP DEBUG:", {
+      problemId: problem.id,
+      type: problem.type,
+      candidateAnswerFound: Boolean(candidateAnswer),
+      candidateAnswer: candidateAnswer?.answer,
+      correctAnswer: problem.answer,
+    });
+
     if (!candidateAnswer) {
-      // Written / Coding answer না থাকলেও
-      // manual evaluation pending থাকবে
       if (
         problem.type === ProblemType.WRITTEN ||
         problem.type === ProblemType.CODING
@@ -286,12 +310,38 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
       continue;
     }
 
-    // MCQ → automatic evaluation
     if (problem.type === ProblemType.MCQ) {
-      const isCorrect =
-        candidateAnswer.answer?.trim() === problem.answer?.trim();
+      const normalizeAnswer = (value: unknown) =>
+        String(value ?? "")
+          .trim()
+          .toLowerCase();
 
+      console.log("MCQ EVALUATION DEBUG:", {
+        problemId: problem.id,
+        problemType: problem.type,
+        candidateAnswer: candidateAnswer.answer,
+        correctAnswer: problem.answer,
+        candidateNormalized: String(candidateAnswer.answer ?? "")
+          .trim()
+          .toLowerCase(),
+        correctNormalized: String(problem.answer ?? "")
+          .trim()
+          .toLowerCase(),
+      });
+
+      const isCorrect =
+        normalizeAnswer(candidateAnswer.answer) ===
+        normalizeAnswer(problem.answer);
       const marks = isCorrect ? (assessmentProblem.marks ?? problem.marks) : 0;
+
+      console.log("MCQ EVALUATION:", {
+        question: problem.title,
+        candidateAnswer: candidateAnswer.answer,
+        correctAnswer: problem.answer,
+        isCorrect,
+        obtainedMarks: marks,
+        maxMarks: assessmentProblem.marks ?? problem.marks,
+      });
 
       answerUpdatePromises.push(
         prisma.answer.update({
@@ -309,7 +359,6 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
       obtainedMarks += marks;
     }
 
-    // WRITTEN / CODING → manual evaluation pending
     if (
       problem.type === ProblemType.WRITTEN ||
       problem.type === ProblemType.CODING
@@ -318,15 +367,12 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
     }
   }
 
-  // যদি Written / Coding evaluation pending থাকে,
-  // তাহলে Submission এখনো EVALUATED হবে না
   const submissionStatus = pendingEvaluation
     ? SubmissionStatus.PENDING
     : SubmissionStatus.EVALUATED;
 
-  const evaluatedAt = pendingEvaluation ? undefined : new Date();
+  const evaluatedAt = pendingEvaluation ? null : new Date();
 
-  // Update submission
   const submissionUpdate = prisma.submission.update({
     where: {
       id: submissionId,
@@ -338,7 +384,6 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
     },
   });
 
-  // Submit attempt
   const attemptUpdate = prisma.attempt.update({
     where: {
       id: submission.attempt.id,
@@ -349,23 +394,49 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
     },
   });
 
-  // Update MCQ answers + submission + attempt together
   const transactionResults = await prisma.$transaction([
     ...answerUpdatePromises,
     submissionUpdate,
     attemptUpdate,
   ]);
 
-  // Last item = attempt update
-  // Second last item = submission update
   return transactionResults[transactionResults.length - 2];
 };
 
+const getCompanySubmissions = async (companyId: string) => {
+  const submissions = await prisma.submission.findMany({
+    where: {
+      attempt: {
+        assessment: {
+          companyId,
+        },
+      },
+    },
+    include: {
+      attempt: {
+        include: {
+          assessment: true,
+        },
+      },
+      answers: {
+        include: {
+          problem: true,
+        },
+      },
+      result: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 
+  return submissions;
+};
 
 export const submissionService = {
   createSubmission,
   getMySubmissions,
   getSubmissionById,
   submitSubmission,
+  getCompanySubmissions,
 };

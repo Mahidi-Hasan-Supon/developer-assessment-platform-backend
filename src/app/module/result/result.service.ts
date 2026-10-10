@@ -212,9 +212,9 @@ const getMyResults = async (candidateId: string) => {
     },
   });
 
-  if (allResults.length === 0) {
-    throw new AppError(httpStatus.NOT_FOUND, "You have no result yet");
-  }
+  if (!allResults.length) {
+  return [];
+}
 
   const publishedResults = allResults.filter(
     (result) => result.publishedAt !== null,

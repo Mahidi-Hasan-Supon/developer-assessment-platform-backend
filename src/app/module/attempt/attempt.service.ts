@@ -4,6 +4,7 @@ import {
   AttemptStatus,
   InvitationStatus,
   PaymentStatus,
+  SubmissionStatus,
   UserRole,
 } from "../../../../generated/prisma/enums";
 
@@ -64,28 +65,27 @@ const startAttempt = async (payload: ICreateAttempt, candidateId: string) => {
 
   // 6. Check payment for paid assessment
   // 6. Check payment for paid assessment
-console.log("ASSESSMENT PRICE:", invitation.assessment.price);
-console.log("ASSESSMENT ID:", invitation.assessmentId);
+  console.log("ASSESSMENT PRICE:", invitation.assessment.price);
+  console.log("ASSESSMENT ID:", invitation.assessmentId);
 
-if (invitation.assessment.price > 0) {
-  const payment = await prisma.payment.findFirst({
-    where: {
-      userId: candidateId,
-      assessmentId: invitation.assessmentId,
-      status: PaymentStatus.SUCCESS,
-    },
-  });
+  if (invitation.assessment.price > 0) {
+    const payment = await prisma.payment.findFirst({
+      where: {
+        userId: candidateId,
+        assessmentId: invitation.assessmentId,
+        status: PaymentStatus.SUCCESS,
+      },
+    });
 
-  console.log("PAYMENT FOUND:", payment);
+    console.log("PAYMENT FOUND:", payment);
 
-  if (!payment) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "Please complete payment before starting the assessment",
-    );
+    if (!payment) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        "Please complete payment before starting the assessment",
+      );
+    }
   }
-}
-
 
   // 5. Check if attempt already exists
   const existingAttempt = await prisma.attempt.findUnique({
@@ -107,26 +107,50 @@ if (invitation.assessment.price > 0) {
     invitation.assessment.durationMinutes,
   );
 
-  // 7. Create attempt
-  const result = await prisma.attempt.create({
-    data: {
-      invitationId,
-      candidateId,
-      assessmentId: invitation.assessmentId,
-      startedAt,
-      expiresAt,
-      status: AttemptStatus.IN_PROGRESS,
-    },
-  });
+  // 7. Create attempt and update assessment status atomically
+  const result = await prisma.$transaction(async (tx) => {
+    const attempt = await tx.attempt.create({
+      data: {
+        invitationId,
+        candidateId,
+        assessmentId: invitation.assessmentId,
+        startedAt,
+        expiresAt,
+        status: AttemptStatus.IN_PROGRESS,
+      },
+    });
 
-  // 8. Mark invitation as USED
-  await prisma.invitation.update({
-    where: {
-      id: invitationId,
-    },
-    data: {
-      status: InvitationStatus.USED,
-    },
+    await tx.submission.create({
+      data: {
+        attemptId: attempt.id,
+        totalMarks: invitation.assessment.totalMarks,
+        status: SubmissionStatus.PENDING,
+      },
+    });
+
+    // First candidate starts the assessment.
+    // Keep ONGOING status for subsequent candidates.
+    if (invitation.assessment.status === AssessmentStatus.PUBLISHED) {
+      await tx.assessment.update({
+        where: {
+          id: invitation.assessmentId,
+        },
+        data: {
+          status: AssessmentStatus.ONGOING,
+        },
+      });
+    }
+
+    await tx.invitation.update({
+      where: {
+        id: invitationId,
+      },
+      data: {
+        status: InvitationStatus.USED,
+      },
+    });
+
+    return attempt;
   });
 
   return result;
@@ -239,15 +263,48 @@ const getAttemptById = async (
   userId: string,
   role: UserRole,
 ) => {
+  console.log("Requested Attempt ID:", attemptId);
+  console.log("Current User ID:", userId);
+  console.log("Current Role:", role);
+
   const attempt = await prisma.attempt.findUnique({
     where: {
       id: attemptId,
     },
     include: {
-      assessment: true,
+      assessment: {
+        include: {
+          assessmentProblems: {
+            orderBy: { order: "asc" },
+            include: {
+              problem: {
+                select: {
+                  id: true,
+                  title: true,
+                  description: true,
+                  type: true,
+                  difficulty: true,
+                  marks: true,
+                  options: true,
+                },
+              },
+            },
+          },
+        },
+      },
       invitation: true,
+      submission: {
+        select: {
+          id: true,
+          status: true,
+          totalMarks: true,
+          obtainedMarks: true,
+        },
+      },
     },
   });
+
+  console.log("Found Attempt:", attempt);
 
   if (!attempt) {
     throw new AppError(httpStatus.NOT_FOUND, "Attempt not found");

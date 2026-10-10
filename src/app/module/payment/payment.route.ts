@@ -10,16 +10,16 @@ const router = express.Router();
 router.post(
   "/create",
   auth(UserRole.CANDIDATE),
-  validationRequest(
-    paymentValidation.createPaymentSchema,
-  ),
+  validationRequest(paymentValidation.createPaymentSchema),
   paymentController.createPayment,
 );
 
+router.get("/bkash/callback", paymentController.bkashCallback);
+
 router.get(
-  "/bkash/callback",
-  paymentController.bkashCallback,
+  "/my-payments",
+  auth(UserRole.CANDIDATE),
+  paymentController.getMyPayments,
 );
 
 export const paymentRoutes = router;
-

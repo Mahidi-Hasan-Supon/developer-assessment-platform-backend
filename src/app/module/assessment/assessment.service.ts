@@ -69,7 +69,7 @@ const getAllAssessments = async (
     });
   }
 
-  // Role based filtering
+  // Role-based filtering
   if (role === UserRole.COMPANY) {
     andConditions.push({
       companyId: userId,
@@ -81,8 +81,6 @@ const getAllAssessments = async (
       status: AssessmentStatus.PUBLISHED,
     });
   }
-
-  // Admin → no company/status restriction
 
   // Soft delete
   andConditions.push({
@@ -186,6 +184,44 @@ const updateAssessment = async (
       throw new AppError(
         httpStatus.BAD_REQUEST,
         `Cannot change assessment status from ${currentStatus} to ${newStatus}`,
+      );
+    }
+  }
+
+  // Validate question marks before publishing
+  if (payload.status === AssessmentStatus.PUBLISHED) {
+    const assessmentProblems = await prisma.assessmentProblem.findMany({
+      where: {
+        assessmentId: id,
+      },
+      select: {
+        marks: true,
+      },
+    });
+
+    if (assessmentProblems.length === 0) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Cannot publish an assessment without questions",
+      );
+    }
+
+    const questionTotalMarks = assessmentProblems.reduce(
+      (total, item) => total + (item.marks ?? 0),
+      0,
+    );
+
+    if (questionTotalMarks !== totalMarks) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `Cannot publish assessment. Total question marks (${questionTotalMarks}) must equal assessment total marks (${totalMarks})`,
+      );
+    }
+
+    if (passMarks > questionTotalMarks) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Pass marks cannot be greater than total question marks",
       );
     }
   }

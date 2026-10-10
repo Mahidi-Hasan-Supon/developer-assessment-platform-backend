@@ -10,9 +10,7 @@ const router = Router();
 router.post(
   "/",
   auth(UserRole.CANDIDATE),
-  validationRequest(
-    submissionValidation.createSubmissionSchema,
-  ),
+  validationRequest(submissionValidation.createSubmissionSchema),
   submissionController.createSubmission,
 );
 
@@ -34,6 +32,10 @@ router.patch(
   submissionController.submitSubmission,
 );
 
+router.get(
+  "/company/submissions",
+  auth(UserRole.COMPANY),
+  submissionController.getCompanySubmissions,
+);
+
 export const submissionRoute = router;
-
-

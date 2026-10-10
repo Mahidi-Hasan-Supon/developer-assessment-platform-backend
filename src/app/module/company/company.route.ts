@@ -20,11 +20,18 @@ router.get(
   auth(UserRole.ADMIN),
   companyController.getCompanyApplications,
 );
+
 router.patch(
   "/applications/:id/status",
   auth(UserRole.ADMIN),
   validationRequest(companyValidation.updateCompanyStatusSchema),
   companyController.updateCompanyApplicationStatus,
+);
+
+router.get(
+  "/candidates",
+  auth(UserRole.COMPANY, UserRole.ADMIN),
+  companyController.getCandidates,
 );
 
 export const companyRouter = router;

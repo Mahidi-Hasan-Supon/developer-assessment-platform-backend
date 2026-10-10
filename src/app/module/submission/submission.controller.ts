@@ -6,80 +6,85 @@ import { catchAsync } from "../../utiles/catchAsync";
 import { sendResponse } from "../../utiles/sendResponse";
 import { sub } from "date-fns";
 
-const createSubmission = catchAsync(
+const createSubmission = catchAsync(async (req: Request, res: Response) => {
+  const candidateId = req.user?.userId as string;
+
+  const result = await submissionService.createSubmission(
+    req.body,
+    candidateId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Submission created successfully",
+    data: result,
+  });
+});
+
+const getMySubmissions = catchAsync(async (req: Request, res: Response) => {
+  const candidateId = req.user?.userId as string;
+
+  const { data, meta } = await submissionService.getMySubmissions(
+    candidateId,
+    req.query,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Submissions retrieved successfully",
+    data,
+    meta,
+  });
+});
+
+const getSubmissionById = catchAsync(async (req: Request, res: Response) => {
+  const { submissionId } = req.params;
+
+  const candidateId = req.user?.userId as string;
+
+  const result = await submissionService.getSubmissionById(
+    submissionId as string,
+    candidateId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Submission retrieved successfully",
+    data: result,
+  });
+});
+
+const submitSubmission = catchAsync(async (req: Request, res: Response) => {
+  const { submissionId } = req.params;
+
+  const candidateId = req.user?.userId as string;
+
+  const result = await submissionService.submitSubmission(
+    submissionId as string,
+    candidateId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Submission submitted and evaluated successfully",
+    data: result,
+  });
+});
+
+const getCompanySubmissions = catchAsync(
   async (req: Request, res: Response) => {
-    const candidateId = req.user?.userId as string;
+    const companyId = req.user?.userId as string;
 
-    const result =
-      await submissionService.createSubmission(
-        req.body,
-        candidateId,
-      );
-
-    sendResponse(res, {
-      statusCode: httpStatus.CREATED,
-      success: true,
-      message: "Submission created successfully",
-      data: result,
-    });
-  },
-);
-
-const getMySubmissions = catchAsync(
-  async (req: Request, res: Response) => {
-    const candidateId = req.user?.userId as string;
-
-    const {data , meta} =
-      await submissionService.getMySubmissions(
-        candidateId,
-        req.query
-      );
+    const result = await submissionService.getCompanySubmissions(companyId);
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Submissions retrieved successfully",
-      data,meta
-    });
-  },
-);
-
-const getSubmissionById = catchAsync(
-  async (req: Request, res: Response) => {
-    const { submissionId } = req.params;
-
-    const candidateId = req.user?.userId as string;
-
-    const result =
-      await submissionService.getSubmissionById(
-        submissionId as string,
-        candidateId,
-      );
-
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Submission retrieved successfully",
-      data: result,
-    });
-  },
-);
-
-const submitSubmission = catchAsync(
-  async (req: Request, res: Response) => {
-    const { submissionId } = req.params;
-
-    const candidateId = req.user?.userId as string;
-
-    const result = await submissionService.submitSubmission(
-      submissionId as string,
-      candidateId,
-    );
-
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Submission submitted and evaluated successfully",
+      message: "Company submissions retrieved successfully",
       data: result,
     });
   },
@@ -89,5 +94,6 @@ export const submissionController = {
   createSubmission,
   getMySubmissions,
   getSubmissionById,
-  submitSubmission
+  submitSubmission,
+  getCompanySubmissions,
 };

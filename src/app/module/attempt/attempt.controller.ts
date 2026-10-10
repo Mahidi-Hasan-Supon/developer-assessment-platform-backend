@@ -32,18 +32,21 @@ const getMyAttempts = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllAttempts = catchAsync(async (req: Request, res: Response) => {
-  const {data , meta} = await attemptService.getAllAttempts(req.query);
+  const { data, meta } = await attemptService.getAllAttempts(req.query);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Attempts retrieved successfully",
     data,
-    meta
+    meta,
   });
 });
 
 const getAttemptById = catchAsync(async (req: Request, res: Response) => {
+  console.log("Request URL:", req.originalUrl);
+  console.log("Route Params:", req.params);
+
   const { attemptId } = req.params;
 
   const userId = req.user?.userId as string;
@@ -55,10 +58,11 @@ const getAttemptById = catchAsync(async (req: Request, res: Response) => {
     role,
   );
 
+  // বাকি response code আগের মতো থাকবে
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Attempt retrieved successfully",
+    message: "Attempt submitted successfully",
     data: result,
   });
 });

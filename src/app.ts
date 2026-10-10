@@ -18,6 +18,7 @@ import { paymentRoutes } from "./app/module/payment/payment.route";
 import { reportRoutes } from "./app/module/report/report.route";
 import { analyticsRoutes } from "./app/module/analytics/analytics.route";
 import { companyRouter } from "./app/module/company/company.route";
+import { userRoute } from "./app/module/user/user.route";
 
 const app: Application = express();
 
@@ -43,6 +44,7 @@ app.use("/api/v1/answer", answerRoute);
 app.use("/api/v1/result", resultRoute);
 app.use("/api/v1/payment", paymentRoutes);
 app.use("/api/v1/analytics", analyticsRoutes);
+app.use("/api/v1/user", userRoute);
 // abadoto bad
 // app.use("/api/v1/report", reportRoutes);
 // app.use("/api/v1/notification", reportRoutes);

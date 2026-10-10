@@ -42,12 +42,12 @@ const getCompanyApplications = catchAsync(
 const updateCompanyApplicationStatus = catchAsync(
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { status , reviewNote} = req.body;
+    const { status, reviewNote } = req.body;
 
     const result = await companyService.updateCompanyApplicationStatus(
       id as string,
       status as CompanyStatus,
-      reviewNote
+      reviewNote,
     );
 
     sendResponse(res, {
@@ -59,8 +59,21 @@ const updateCompanyApplicationStatus = catchAsync(
   },
 );
 
+const getCandidates = catchAsync(async (req, res) => {
+  const result = await companyService.getCandidates(req.query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Candidates retrieved successfully",
+    data: result.data,
+    meta: result.meta,
+  });
+});
+
 export const companyController = {
   createCompanyProfile,
   getCompanyApplications,
-  updateCompanyApplicationStatus
+  updateCompanyApplicationStatus,
+  getCandidates
 };

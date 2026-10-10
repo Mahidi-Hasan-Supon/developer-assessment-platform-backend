@@ -4,45 +4,56 @@ import { paymentService } from "./payment.service";
 import { catchAsync } from "../../utiles/catchAsync";
 import { sendResponse } from "../../utiles/sendResponse";
 
-const createPayment = catchAsync(
-  async (req: Request, res: Response) => {
-    const { assessmentId } = req.body;
+const createPayment = catchAsync(async (req: Request, res: Response) => {
+  const { assessmentId } = req.body;
 
-    const result = await paymentService.createPayment(
-      assessmentId,
-      req.user!.userId,
-    );
+  const result = await paymentService.createPayment(
+    assessmentId,
+    req.user!.userId,
+  );
 
-    sendResponse(res, {
-      statusCode: httpStatus.CREATED,
-      success: true,
-      message: "Payment initiated successfully",
-      data: result,
-    });
-  },
-);
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Payment initiated successfully",
+    data: result,
+  });
+});
 
-const bkashCallback = catchAsync(
-  async (req: Request, res: Response) => {
-    const { paymentID, status } = req.query;
+const bkashCallback = catchAsync(async (req: Request, res: Response) => {
+  const { paymentID, status } = req.query;
+  console.log("bKash callback received:", {
+    paymentID: paymentID ? "present" : "missing",
+    status,
+  });
 
-    const result =
-      await paymentService.handleBkashCallback(
-        paymentID as string,
-        status as string,
-      );
+  const result = await paymentService.handleBkashCallback(
+    paymentID as string,
+    status as string,
+  );
 
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: result.success,
-      message: result.message,
-      data: result,
-    });
-  },
-);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: result.success,
+    message: result.message,
+    data: result,
+  });
+});
+
+const getMyPayments = catchAsync(async (req: Request, res: Response) => {
+  const userId =req.user?.userId
+  const result = await paymentService.getMyPayments(userId as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Payments retrieved successfully",
+    data: result,
+  });
+});
 
 export const paymentController = {
   createPayment,
   bkashCallback,
+  getMyPayments
 };
-

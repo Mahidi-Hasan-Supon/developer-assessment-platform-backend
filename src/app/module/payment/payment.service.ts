@@ -9,7 +9,6 @@ import {
 import config from "../../config";
 import { getBkashIdToken } from "../../lib/bkash";
 
-
 const createPayment = async (assessmentId: string, userId: string) => {
   // Check assessment
   const assessment = await prisma.assessment.findFirst({
@@ -71,7 +70,6 @@ const createPayment = async (assessmentId: string, userId: string) => {
         "bKash ID token not found",
       );
     }
- 
 
     console.log("BKASH CALLBACK URL:", config.bkash_callback_url);
     // Create bKash payment
@@ -98,6 +96,12 @@ const createPayment = async (assessmentId: string, userId: string) => {
     );
 
     const bkashResult = await bkashResponse.json();
+
+    console.log("bKash create result:", {
+      statusCode: bkashResult.statusCode,
+      statusMessage: bkashResult.statusMessage,
+      paymentID: bkashResult.paymentID ? "present" : "missing",
+    });
 
     // bKash payment create failed
     if (!bkashResponse.ok || bkashResult.statusCode !== "0000") {
@@ -153,7 +157,6 @@ const createPayment = async (assessmentId: string, userId: string) => {
   }
 };
 
- 
 const handleBkashCallback = async (paymentID: string, status: string) => {
   if (!paymentID) {
     throw new AppError(httpStatus.BAD_REQUEST, "bKash payment ID is required");
@@ -320,7 +323,28 @@ const handleBkashCallback = async (paymentID: string, status: string) => {
   };
 };
 
+const getMyPayments = async (userId: string) => {
+  return prisma.payment.findMany({
+    where: {
+      userId,
+    },
+    select: {
+      id: true,
+      assessmentId: true,
+      status: true,
+      amount: true,
+      transactionId: true,
+      paidAt: true,
+      createdAt: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
+
 export const paymentService = {
   createPayment,
   handleBkashCallback,
+  getMyPayments
 };
