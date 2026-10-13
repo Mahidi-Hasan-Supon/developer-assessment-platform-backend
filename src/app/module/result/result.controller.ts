@@ -39,7 +39,10 @@ const publishResult = catchAsync(async (req: Request, res: Response) => {
   const { resultId } = req.params;
   const companyId = req.user?.userId;
 
-  const result = await resultService.publishResult(resultId as string, companyId!);
+  const result = await resultService.publishResult(
+    resultId as string,
+    companyId!,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -80,10 +83,30 @@ const getResultById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getCompanyResults = catchAsync(async (req: Request, res: Response) => {
+  const companyId = req.user?.userId as string;
+
+  const query = {
+    page: Number(req.query.page) || 1,
+    limit: Number(req.query.limit) || 10,
+    searchTerm: req.query.searchTerm?.toString() || "",
+  };
+
+  const result = await resultService.getCompanyResults(companyId, query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Company results retrieved successfully",
+    data: result.results,
+    meta: result.meta,
+  });
+});
 export const resultController = {
   createResult,
   getMyResults,
   getResultById,
   evaluateResult,
-  publishResult
+  publishResult,
+  getCompanyResults,
 };

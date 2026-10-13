@@ -22,10 +22,10 @@ const createPayment = catchAsync(async (req: Request, res: Response) => {
 
 const bkashCallback = catchAsync(async (req: Request, res: Response) => {
   const { paymentID, status } = req.query;
-  console.log("bKash callback received:", {
-    paymentID: paymentID ? "present" : "missing",
-    status,
-  });
+  // console.log("bKash callback received:", {
+  //   paymentID: paymentID ? "present" : "missing",
+  //   status,
+  // });
 
   const result = await paymentService.handleBkashCallback(
     paymentID as string,

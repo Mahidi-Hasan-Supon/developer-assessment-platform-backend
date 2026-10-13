@@ -65,8 +65,8 @@ const startAttempt = async (payload: ICreateAttempt, candidateId: string) => {
 
   // 6. Check payment for paid assessment
   // 6. Check payment for paid assessment
-  console.log("ASSESSMENT PRICE:", invitation.assessment.price);
-  console.log("ASSESSMENT ID:", invitation.assessmentId);
+  // console.log("ASSESSMENT PRICE:", invitation.assessment.price);
+  // console.log("ASSESSMENT ID:", invitation.assessmentId);
 
   if (invitation.assessment.price > 0) {
     const payment = await prisma.payment.findFirst({
@@ -263,9 +263,9 @@ const getAttemptById = async (
   userId: string,
   role: UserRole,
 ) => {
-  console.log("Requested Attempt ID:", attemptId);
-  console.log("Current User ID:", userId);
-  console.log("Current Role:", role);
+  // console.log("Requested Attempt ID:", attemptId);
+  // console.log("Current User ID:", userId);
+  // console.log("Current Role:", role);
 
   const attempt = await prisma.attempt.findUnique({
     where: {

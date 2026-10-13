@@ -172,14 +172,13 @@ const updateCompanyApplicationStatus = async (
       });
     }
   } catch (error) {
-    console.error("Company status email failed:", error);
+    // console.error("Company status email failed:", error);
   }
 
   return updatedCompany;
 };
 
 // user get by admin company
-
 
 const getCandidates = async (query: {
   searchTerm?: string;
@@ -190,21 +189,23 @@ const getCandidates = async (query: {
   const limit = Math.min(50, Math.max(1, Number(query.limit) || 10));
   const skip = (page - 1) * limit;
 
+  const searchTerm = query.searchTerm?.trim();
+
   const where = {
     role: UserRole.CANDIDATE,
     deletedAt: null,
-    ...(query.searchTerm?.trim()
+    ...(searchTerm
       ? {
           OR: [
             {
               name: {
-                contains: query.searchTerm.trim(),
+                contains: searchTerm,
                 mode: "insensitive" as const,
               },
             },
             {
               email: {
-                contains: query.searchTerm.trim(),
+                contains: searchTerm,
                 mode: "insensitive" as const,
               },
             },
@@ -220,10 +221,22 @@ const getCandidates = async (query: {
         id: true,
         name: true,
         email: true,
+        createdAt: true,
+        candidateProfile: {
+          select: {
+            phone: true,
+            profileImage: true,
+            bio: true,
+            skills: true,
+            resume: true,
+          },
+        },
       },
       skip,
       take: limit,
-      orderBy: { name: "asc" },
+      orderBy: {
+        name: "asc",
+      },
     }),
     prisma.user.count({ where }),
   ]);
@@ -239,9 +252,104 @@ const getCandidates = async (query: {
   };
 };
 
+const getMyCompanyProfile = async (userId: string) => {
+  const companyProfile = await prisma.companyProfile.findUnique({
+    where: {
+      userId,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          emailVerified: true,
+        },
+      },
+    },
+  });
+
+  if (!companyProfile) {
+    throw new AppError(httpStatus.NOT_FOUND, "Company profile not found");
+  }
+
+  return companyProfile;
+};
+
+type TUpdateCompanyProfilePayload = {
+  companyName?: string;
+  description?: string;
+  website?: string;
+  location?: string;
+  industry?: string;
+  contactNumber?: string;
+};
+
+const updateMyCompanyProfile = async (
+  userId: string,
+  payload: TUpdateCompanyProfilePayload,
+) => {
+  const companyProfile = await prisma.companyProfile.findUnique({
+    where: {
+      userId,
+    },
+  });
+
+  if (!companyProfile) {
+    throw new AppError(httpStatus.NOT_FOUND, "Company profile not found");
+  }
+
+  if (companyProfile.status !== CompanyStatus.APPROVED) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Only approved companies can update their profile",
+    );
+  }
+
+  const updatedProfile = await prisma.companyProfile.update({
+    where: {
+      userId,
+    },
+    data: {
+      ...(payload.companyName !== undefined && {
+        companyName: payload.companyName,
+      }),
+      ...(payload.description !== undefined && {
+        description: payload.description || null,
+      }),
+      ...(payload.website !== undefined && {
+        website: payload.website || null,
+      }),
+      ...(payload.location !== undefined && {
+        location: payload.location || null,
+      }),
+      ...(payload.industry !== undefined && {
+        industry: payload.industry || null,
+      }),
+      ...(payload.contactNumber !== undefined && {
+        contactNumber: payload.contactNumber || null,
+      }),
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          emailVerified: true,
+        },
+      },
+    },
+  });
+
+  return updatedProfile;
+};
+
 export const companyService = {
   createCompanyProfile,
   getCompanyApplications,
   updateCompanyApplicationStatus,
-  getCandidates
+  getCandidates,
+  getMyCompanyProfile,
+  updateMyCompanyProfile
 };

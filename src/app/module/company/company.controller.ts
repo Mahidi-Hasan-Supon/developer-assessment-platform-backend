@@ -71,9 +71,42 @@ const getCandidates = catchAsync(async (req, res) => {
   });
 });
 
+const getMyCompanyProfile = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId as string;
+
+  const result = await companyService.getMyCompanyProfile(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Company profile retrieved successfully",
+    data: result,
+  });
+});
+
+const updateMyCompanyProfile = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.userId as string;
+
+    const result = await companyService.updateMyCompanyProfile(
+      userId,
+      req.body,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Company profile updated successfully",
+      data: result,
+    });
+  },
+);
+
 export const companyController = {
   createCompanyProfile,
   getCompanyApplications,
   updateCompanyApplicationStatus,
-  getCandidates
+  getCandidates,
+  getMyCompanyProfile,
+  updateMyCompanyProfile
 };

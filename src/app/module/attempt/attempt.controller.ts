@@ -44,8 +44,8 @@ const getAllAttempts = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAttemptById = catchAsync(async (req: Request, res: Response) => {
-  console.log("Request URL:", req.originalUrl);
-  console.log("Route Params:", req.params);
+  // console.log("Request URL:", req.originalUrl);
+  // console.log("Route Params:", req.params);
 
   const { attemptId } = req.params;
 

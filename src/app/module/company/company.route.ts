@@ -34,4 +34,19 @@ router.get(
   companyController.getCandidates,
 );
 
+
+router.get(
+  "/profile",
+  auth(UserRole.COMPANY),
+  companyController.getMyCompanyProfile,
+);
+
+router.patch(
+  "/profile",
+  auth(UserRole.COMPANY),
+  validationRequest(companyValidation.updateCompanyProfileSchema),
+  companyController.updateMyCompanyProfile,
+);
+
+
 export const companyRouter = router;

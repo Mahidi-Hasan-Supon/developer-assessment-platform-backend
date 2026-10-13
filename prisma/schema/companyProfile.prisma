@@ -3,6 +3,7 @@ model CompanyProfile {
   companyName String?
   description String?
   website     String?
+  contactNumber String?
   status CompanyStatus @default(PENDING)
   reviewNote String?
   location    String?

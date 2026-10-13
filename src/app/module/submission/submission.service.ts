@@ -195,11 +195,11 @@ const getSubmissionById = async (submissionId: string, candidateId: string) => {
 };
 
 const submitSubmission = async (submissionId: string, candidateId: string) => {
-  console.log("🔥 SUBMIT SUBMISSION SERVICE CALLED", {
-    submissionId,
-    candidateId,
-  });
-  console.log("SUBMIT SUBMISSION FUNCTION CALLED", submissionId);
+  // console.log("🔥 SUBMIT SUBMISSION SERVICE CALLED", {
+  //   submissionId,
+  //   candidateId,
+  // });
+  // console.log("SUBMIT SUBMISSION FUNCTION CALLED", submissionId);
   const submission = await prisma.submission.findUnique({
     where: { id: submissionId },
     include: {
@@ -289,15 +289,15 @@ const submitSubmission = async (submissionId: string, candidateId: string) => {
   for (const assessmentProblem of assessmentProblems) {
     const problem = assessmentProblem.problem;
     const candidateAnswer = answerMap.get(problem.id);
-    console.log("🔥 ENTERED MCQ BLOCK:", problem.id);
+    // console.log("🔥 ENTERED MCQ BLOCK:", problem.id);
 
-    console.log("🔥 LOOP DEBUG:", {
-      problemId: problem.id,
-      type: problem.type,
-      candidateAnswerFound: Boolean(candidateAnswer),
-      candidateAnswer: candidateAnswer?.answer,
-      correctAnswer: problem.answer,
-    });
+    // console.log("🔥 LOOP DEBUG:", {
+    //   problemId: problem.id,
+    //   type: problem.type,
+    //   candidateAnswerFound: Boolean(candidateAnswer),
+    //   candidateAnswer: candidateAnswer?.answer,
+    //   correctAnswer: problem.answer,
+    // });
 
     if (!candidateAnswer) {
       if (

@@ -71,7 +71,7 @@ const createPayment = async (assessmentId: string, userId: string) => {
       );
     }
 
-    console.log("BKASH CALLBACK URL:", config.bkash_callback_url);
+    // console.log("BKASH CALLBACK URL:", config.bkash_callback_url);
     // Create bKash payment
     const bkashResponse = await fetch(
       `${config.bkash_base_url}/tokenized/checkout/create`,
@@ -97,11 +97,11 @@ const createPayment = async (assessmentId: string, userId: string) => {
 
     const bkashResult = await bkashResponse.json();
 
-    console.log("bKash create result:", {
-      statusCode: bkashResult.statusCode,
-      statusMessage: bkashResult.statusMessage,
-      paymentID: bkashResult.paymentID ? "present" : "missing",
-    });
+    // console.log("bKash create result:", {
+    //   statusCode: bkashResult.statusCode,
+    //   statusMessage: bkashResult.statusMessage,
+    //   paymentID: bkashResult.paymentID ? "present" : "missing",
+    // });
 
     // bKash payment create failed
     if (!bkashResponse.ok || bkashResult.statusCode !== "0000") {

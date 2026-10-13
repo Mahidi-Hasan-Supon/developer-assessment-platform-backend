@@ -34,4 +34,10 @@ router.get(
   resultController.getResultById,
 );
 
+router.get(
+  "/company/results",
+  auth(UserRole.COMPANY),
+  resultController.getCompanyResults,
+);
+
 export const resultRoute = router;
