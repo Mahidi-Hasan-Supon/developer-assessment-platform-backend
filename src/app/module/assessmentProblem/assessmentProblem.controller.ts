@@ -119,5 +119,5 @@ export const assessmentProblemController = {
   getByIdAssessmentProblems,
   updateAssessmentProblem,
   deleteAssessmentProblem,
-  getAllAssessmentProblems
+  getAllAssessmentProblems,
 };

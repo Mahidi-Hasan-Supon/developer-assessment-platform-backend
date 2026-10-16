@@ -95,10 +95,10 @@ const createAssessmentProblem = async (
       order: payload.order,
       marks: payload.marks,
     },
-     include:{
-      problem:true,
-      assessment:true
-     },
+    include: {
+      problem: true,
+      assessment: true,
+    },
   });
 
   return result;
@@ -176,6 +176,11 @@ const getByIdAssessmentProblems = async (
       id: assessmentId,
       deletedAt: null,
     },
+    select: {
+      id: true,
+      companyId: true,
+      status: true,
+    },
   });
 
   if (!assessment) {
@@ -183,18 +188,22 @@ const getByIdAssessmentProblems = async (
   }
 
   const isAdmin = role === UserRole.ADMIN;
-  const isOwner = assessment.companyId === userId;
+  const isOwner = role === UserRole.COMPANY && assessment.companyId === userId;
+  const isCandidate = role === UserRole.CANDIDATE;
 
-  if (!isAdmin && !isOwner) {
+  const canViewProblems =
+    isAdmin || isOwner || (isCandidate && assessment.status === "PUBLISHED");
+
+  if (!canViewProblems) {
     throw new AppError(
       httpStatus.FORBIDDEN,
       "You do not have permission to view these problems",
     );
   }
 
-  const result = await prisma.assessmentProblem.findMany({
+  return prisma.assessmentProblem.findMany({
     where: {
-      assessmentId,
+      assessmentId: assessment.id,
     },
     orderBy: {
       order: "asc",
@@ -203,8 +212,6 @@ const getByIdAssessmentProblems = async (
       problem: true,
     },
   });
-
-  return result;
 };
 
 const updateAssessmentProblem = async (

@@ -9,7 +9,7 @@ const router = Router();
 
 router.post(
   "/:assessmentId/problems",
-  auth(UserRole.ADMIN, UserRole.COMPANY),
+  auth(UserRole.ADMIN, UserRole.COMPANY ),
   validationRequest(assessmentProblemValidation.createAssessmentProblemSchema),
   assessmentProblemController.createAssessmentProblem,
 );
@@ -22,7 +22,7 @@ router.get(
 
 router.get(
   "/:assessmentId/problems",
-  auth(UserRole.ADMIN, UserRole.COMPANY),
+  auth(UserRole.ADMIN, UserRole.COMPANY ,UserRole.CANDIDATE),
   assessmentProblemController.getByIdAssessmentProblems,
 );
 
