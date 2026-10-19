@@ -14,11 +14,12 @@ import { attemptRoute } from "./app/module/attempt/attempt.route";
 import { submissionRoute } from "./app/module/submission/submission.route";
 import { answerRoute } from "./app/module/answer/answer.route";
 import { resultRoute } from "./app/module/result/result.route";
-import { paymentRoutes } from "./app/module/payment/payment.route";
-import { reportRoutes } from "./app/module/report/report.route";
+import { paymentRoutes } from "./app/module/payment/payment.route";  
 import { analyticsRoutes } from "./app/module/analytics/analytics.route";
 import { companyRouter } from "./app/module/company/company.route";
 import { userRoute } from "./app/module/user/user.route";
+import { candidateRouter } from "./app/module/candidate/candidate.route";
+import { aiRouter } from "./app/module/ai/ai.route";
 
 const app: Application = express();
 
@@ -28,11 +29,14 @@ app.use(
     credentials: true,
   }),
 );
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/ai", aiRouter);
 app.use("/api/v1/company", companyRouter);
 app.use("/api/v1/problem", problemRouter);
 app.use("/api/v1/assessment", assessmentRoutes);
@@ -45,6 +49,7 @@ app.use("/api/v1/result", resultRoute);
 app.use("/api/v1/payment", paymentRoutes);
 app.use("/api/v1/analytics", analyticsRoutes);
 app.use("/api/v1/user", userRoute);
+app.use("/api/v1/candidate", candidateRouter);
 // abadoto bad
 // app.use("/api/v1/report", reportRoutes);
 // app.use("/api/v1/notification", reportRoutes);

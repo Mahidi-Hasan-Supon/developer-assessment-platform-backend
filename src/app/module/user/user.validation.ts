@@ -15,3 +15,15 @@ export const updateUserStatusSchema = z.object({
 
 export type UserListQuery = z.infer<typeof userListQuerySchema>;
 export type UpdateUserStatusInput = z.infer<typeof updateUserStatusSchema>;
+
+
+
+
+export const updateCandidateProfileSchema = z.object({
+  name: z.string().trim().min(2).max(100),
+});
+
+export const candidateProfileValidation = {
+  updateCandidateProfileSchema,
+};
+

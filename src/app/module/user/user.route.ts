@@ -3,6 +3,8 @@ import { Router } from "express";
 import { auth } from "../../middleware/checkAuth";
 import { userController } from "./user.controller";
 import { UserRole } from "../../../../generated/prisma/enums";
+import { validationRequest } from "../../middleware/validationRequestByZod";
+import { candidateProfileValidation } from "./user.validation";
 
 const router = Router();
 
@@ -32,5 +34,7 @@ router.patch(
   auth(UserRole.ADMIN),
   userController.updateUserStatus,
 );
+
+
 
 export const userRoute = router;

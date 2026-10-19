@@ -1,4 +1,3 @@
-
 import {
   Prisma,
   UserRole,
@@ -7,10 +6,7 @@ import {
 
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utiles/appError";
-import {
-  UserListQuery,
-  UpdateUserStatusInput,
-} from "./user.validation";
+import { UserListQuery, UpdateUserStatusInput } from "./user.validation";
 
 export const getAllUsers = async (query: UserListQuery) => {
   const { search, role, status, page, limit } = query;
@@ -160,17 +156,11 @@ export const updateUserStatus = async (
   }
 
   if (user.role === UserRole.ADMIN) {
-    throw new AppError(
-      403,
-      "Admin account status cannot be changed here",
-    );
+    throw new AppError(403, "Admin account status cannot be changed here");
   }
 
   if (user.status === payload.status) {
-    throw new AppError(
-      400,
-      `User is already ${payload.status.toLowerCase()}`,
-    );
+    throw new AppError(400, `User is already ${payload.status.toLowerCase()}`);
   }
 
   return prisma.user.update({
@@ -187,10 +177,7 @@ export const updateUserStatus = async (
   });
 };
 
-export const updateCandidateStatus = async (
-  id: string,
-  status: UserStatus,
-) => {
+export const updateCandidateStatus = async (id: string, status: UserStatus) => {
   const candidate = await prisma.user.findFirst({
     where: {
       id,
@@ -208,10 +195,7 @@ export const updateCandidateStatus = async (
   }
 
   if (candidate.status === status) {
-    throw new AppError(
-      400,
-      `Candidate is already ${status.toLowerCase()}`,
-    );
+    throw new AppError(400, `Candidate is already ${status.toLowerCase()}`);
   }
 
   return prisma.user.update({
@@ -228,10 +212,39 @@ export const updateCandidateStatus = async (
   });
 };
 
+const getMyProfile = async (userId: string) => {
+  return prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  });
+};
+
+const updateMyProfile = async (userId: string, payload: { name: string }) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      name: payload.name,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  });
+};
+
 export const userService = {
   getAllUsers,
   getAllCandidates,
   getSingleUser,
   updateUserStatus,
   updateCandidateStatus,
+  getMyProfile,
+  updateMyProfile,
 };

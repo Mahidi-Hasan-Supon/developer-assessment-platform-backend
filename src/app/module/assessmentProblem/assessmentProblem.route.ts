@@ -22,7 +22,6 @@ router.get(
 
 router.get(
   "/:assessmentId/problems",
-  auth(UserRole.ADMIN, UserRole.COMPANY ,UserRole.CANDIDATE),
   assessmentProblemController.getByIdAssessmentProblems,
 );
 

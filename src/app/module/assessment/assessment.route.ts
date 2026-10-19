@@ -17,15 +17,25 @@ router.post(
 
 router.get(
   "/",
-  auth(UserRole.ADMIN, UserRole.COMPANY, UserRole.CANDIDATE),
   assessmentController.getAllAssessments,
 );
 
 router.get(
   "/:id",
-  auth(UserRole.ADMIN, UserRole.COMPANY, UserRole.CANDIDATE),
+  
   assessmentController.getAssessmentById,
 );
+// router.get(
+//   "/",
+//   auth(UserRole.ADMIN, UserRole.COMPANY, UserRole.CANDIDATE),
+//   assessmentController.getAllAssessments,
+// );
+
+// router.get(
+//   "/:id",
+//   auth(UserRole.ADMIN, UserRole.COMPANY, UserRole.CANDIDATE),
+//   assessmentController.getAssessmentById,
+// );
 
 router.patch(
   "/:id",

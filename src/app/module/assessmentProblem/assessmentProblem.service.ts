@@ -168,8 +168,8 @@ const getAllAssessmentProblems = async (query: IAssessmentProblemQuery) => {
 
 const getByIdAssessmentProblems = async (
   assessmentId: string,
-  userId: string,
-  role: UserRole,
+  userId?: string,
+  role?: UserRole,
 ) => {
   const assessment = await prisma.assessment.findFirst({
     where: {
@@ -188,11 +188,16 @@ const getByIdAssessmentProblems = async (
   }
 
   const isAdmin = role === UserRole.ADMIN;
-  const isOwner = role === UserRole.COMPANY && assessment.companyId === userId;
+
+  const isOwner =
+    role === UserRole.COMPANY && !!userId && assessment.companyId === userId;
+
   const isCandidate = role === UserRole.CANDIDATE;
+  const isPublished = assessment.status === "PUBLISHED";
+  const isPublicVisitor = !userId && !role;
 
   const canViewProblems =
-    isAdmin || isOwner || (isCandidate && assessment.status === "PUBLISHED");
+    isAdmin || isOwner || ((isCandidate || isPublicVisitor) && isPublished);
 
   if (!canViewProblems) {
     throw new AppError(
@@ -208,8 +213,20 @@ const getByIdAssessmentProblems = async (
     orderBy: {
       order: "asc",
     },
-    include: {
-      problem: true,
+    select: {
+      id: true,
+      assessmentId: true,
+      problemId: true,
+      order: true,
+      marks: true,
+      problem: {
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          difficulty: true,
+        },
+      },
     },
   });
 };

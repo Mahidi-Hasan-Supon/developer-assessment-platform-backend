@@ -121,6 +121,21 @@ const getAssessmentById = async (id: string) => {
       id,
       deletedAt: null,
     },
+    include: {
+      company: {
+        include: {
+          companyProfile: {
+            select: {
+              companyName: true,
+              description: true,
+              website: true,
+              location: true,
+              industry: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!result) {

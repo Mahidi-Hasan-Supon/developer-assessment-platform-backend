@@ -363,6 +363,98 @@ const getCompanyResults = async (
   };
 };
 
+const getAllResults = async (query: CompanyResultsQuery) => {
+  const page = Math.max(1, Number(query.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(query.limit) || 10));
+  const skip = (page - 1) * limit;
+  const searchTerm = query.searchTerm?.trim();
+
+  const where = {
+    ...(searchTerm
+      ? {
+          OR: [
+            {
+              candidate: {
+                is: {
+                  name: {
+                    contains: searchTerm,
+                    mode: "insensitive" as const,
+                  },
+                },
+              },
+            },
+            {
+              candidate: {
+                is: {
+                  email: {
+                    contains: searchTerm,
+                    mode: "insensitive" as const,
+                  },
+                },
+              },
+            },
+            {
+              assessment: {
+                title: {
+                  contains: searchTerm,
+                  mode: "insensitive" as const,
+                },
+              },
+            },
+          ],
+        }
+      : {}),
+  };
+
+  const [results, total] = await prisma.$transaction([
+    prisma.result.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        assessment: {
+          select: {
+            id: true,
+            title: true,
+            totalMarks: true,
+            passMarks: true,
+            companyId: true,
+          },
+        },
+        candidate: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        submission: {
+          select: {
+            id: true,
+            submittedAt: true,
+            totalMarks: true,
+            obtainedMarks: true,
+          },
+        },
+      },
+    }),
+    prisma.result.count({ where }),
+  ]);
+
+  return {
+    results,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
 export const resultService = {
   createResult,
   getMyResults,
@@ -370,4 +462,5 @@ export const resultService = {
   evaluateResult,
   publishResult,
   getCompanyResults,
+  getAllResults
 };

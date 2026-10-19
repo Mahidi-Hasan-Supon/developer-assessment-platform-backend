@@ -102,6 +102,29 @@ const getCompanyResults = catchAsync(async (req: Request, res: Response) => {
     meta: result.meta,
   });
 });
+
+
+const getAllResults = catchAsync(async (req: Request, res: Response) => {
+  const query = {
+    page: Number(req.query.page) || 1,
+    limit: Number(req.query.limit) || 10,
+    searchTerm: req.query.searchTerm?.toString() || "",
+  };
+
+  const result = await resultService.getAllResults(query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "All results retrieved successfully",
+    data: result.results,
+    meta: result.meta,
+  });
+});
+
+
+
+
 export const resultController = {
   createResult,
   getMyResults,
@@ -109,4 +132,5 @@ export const resultController = {
   evaluateResult,
   publishResult,
   getCompanyResults,
+  getAllResults
 };

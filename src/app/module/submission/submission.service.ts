@@ -92,6 +92,7 @@ const getMySubmissions = async (candidateId: string, query: IQuery) => {
   andConditions.push({
     attempt: {
       candidateId,
+      status: AttemptStatus.SUBMITTED,
     },
   });
 

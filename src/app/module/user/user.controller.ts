@@ -4,6 +4,10 @@ import * as UserService from "./user.service";
 import { userListQuerySchema, updateUserStatusSchema } from "./user.validation";
 import { catchAsync } from "../../utiles/catchAsync";
 import { AppError } from "../../utiles/appError";
+import { sendResponse } from "../../utiles/sendResponse";
+import httpStatus from 'http-status';
+
+
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const query = userListQuerySchema.parse(req.query);
@@ -78,10 +82,51 @@ const updateCandidateStatus = catchAsync(
   },
 );
 
+
+
+const getMyProfile = catchAsync(
+  async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+
+  const result = await UserService.userService.getMyProfile(userId as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Profile retrieved successfully",
+    data: result,
+  })}
+)
+
+const updateMyProfile = catchAsync(
+  async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+
+  const result = await UserService.userService.updateMyProfile(
+    userId as string,
+    req.body,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Profile updated successfully",
+    data: result,
+  });
+
+  })
+
+export const candidateProfileController = {
+  getMyProfile,
+  updateMyProfile,
+};
+
 export const userController = {
   getAllUsers,
   getAllCandidates,
   getSingleUser,
   updateUserStatus,
   updateCandidateStatus,
+  getMyProfile,
+  updateMyProfile
 };

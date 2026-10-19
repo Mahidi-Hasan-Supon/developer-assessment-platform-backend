@@ -39,5 +39,10 @@ router.get(
   auth(UserRole.COMPANY),
   resultController.getCompanyResults,
 );
+router.get(
+  "/admin/results",
+  auth(UserRole.ADMIN),
+  resultController.getAllResults,
+);
 
 export const resultRoute = router;
