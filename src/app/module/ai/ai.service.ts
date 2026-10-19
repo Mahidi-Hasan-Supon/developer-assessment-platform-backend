@@ -2,8 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 
 import httpStatus from "http-status";
 import { AppError } from "../../utiles/appError";
+import config from "../../config";
 
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = config.gemini_api_key;
 
 if (!apiKey) {
   throw new Error("GEMINI_API_KEY is missing from environment variables");

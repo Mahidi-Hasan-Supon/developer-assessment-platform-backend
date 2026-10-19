@@ -11,3 +11,32 @@ dist
 /generated/prisma
 
 .vercel
+.env*
+.next/
+node_modules/
+dist/
+
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.next/
+
+# Generated Prisma client
+generated/
+generated/prisma/
+
+# Deployment
+.vercel/
+
+# Local tools
+.agents/
+.claude/
+.windsurf/
