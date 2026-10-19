@@ -39,6 +39,7 @@ ${question}
         model: "gemini-3.8-flash",
       contents: prompt,
     });
+    console.log(response , "response");
 
     const answer = response.text;
 
