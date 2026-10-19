@@ -34,8 +34,13 @@ export const auth = (...requiredRole: UserRole[]) => {
     if (!token) {
       throw new AppError(httpStatus.UNAUTHORIZED, "You are not logged in");
     }
-    // console.log("TOKEN:", token);
-    // console.log("ACCESS SECRET EXISTS:", !!config.jwt_access_secret);
+    console.log("GET ME AUTH DEBUG:", {
+  hasCookies: Boolean(req.headers.cookie),
+  hasAccessToken: Boolean(req.cookies?.accessToken),
+  hasAuthorization: Boolean(req.headers.authorization),
+});
+    console.log("TOKEN:", token);
+    console.log("ACCESS SECRET EXISTS:", !!config.jwt_access_secret);
 
     const verified = jwtUtils.verifyToken(token, config.jwt_access_secret);
 
