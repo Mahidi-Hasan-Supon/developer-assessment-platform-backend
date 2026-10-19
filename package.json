@@ -1,12 +1,12 @@
 {
-  "name": "developer-assessment-platform-backend",
+  "name": "devassbackend",
   "version": "0.0.1",
   "description": "",
   "main": "server.ts",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsub",
+    "build": "tsup",
     "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format:check": "npx @biomejs/biome format ./src",
@@ -22,17 +22,17 @@
     "@types/ejs": "^3.1.5",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^26.6.2",
     "@types/pg": "^8.23.1",
     "prisma": "^7.10.0",
     "tsup": "^8.5.1",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@types/node": "^26.6.5",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
