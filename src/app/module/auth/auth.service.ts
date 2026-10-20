@@ -342,7 +342,7 @@ const loginUser = async (payload: ILoginPayload) => {
 
   const jwtPayload = {
     userId: user.id,
-     name: user.name,
+    name: user.name,
     email: user.email,
     role: user.role,
   };
@@ -601,8 +601,180 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   };
 };
 
+// const googleLogin = async (payload: IGooglePayload) => {
+//   let googleIdTokenPayload: TokenPayload | null | undefined = null;
+
+//   // ১. Google ID Token verification
+//   try {
+//     const ticket = await googleClient.verifyIdToken({
+//       idToken: payload.idToken,
+//       audience: config.google_client_id,
+//     });
+
+//     googleIdTokenPayload = ticket.getPayload();
+
+//     // console.log("GOOGLE TOKEN VERIFIED");
+//     // console.log("GOOGLE PAYLOAD:", googleIdTokenPayload);
+//   } catch (error) {
+//     console.error("GOOGLE VERIFY ERROR:", error);
+//     throw new AppError(
+//       httpStatus.UNAUTHORIZED,
+//       "Google token is invalid or expired",
+//     );
+//   }
+
+//   // ২. Google account information check
+//   if (
+//     !googleIdTokenPayload ||
+//     !googleIdTokenPayload.email ||
+//     !googleIdTokenPayload.name ||
+//     !googleIdTokenPayload.sub
+//   ) {
+//     throw new AppError(
+//       httpStatus.BAD_REQUEST,
+//       "Invalid Google account information",
+//     );
+//   }
+
+//   if (!googleIdTokenPayload.email_verified) {
+//     throw new AppError(httpStatus.BAD_REQUEST, "Google email is not verified");
+//   }
+
+//   const email = googleIdTokenPayload.email.trim().toLowerCase();
+//   const name = googleIdTokenPayload.name;
+//   const googleId = googleIdTokenPayload.sub;
+
+//   // ৩. Email দিয়ে existing user খোঁজা
+//   const isUserExist = await prisma.user.findUnique({
+//     where: {
+//       email,
+//     },
+//   });
+
+//   let user;
+
+//   // ৪. Existing user
+//   if (isUserExist) {
+//     // Blocked user
+//     if (isUserExist.status === UserStatus.BLOCKED) {
+//       throw new AppError(httpStatus.FORBIDDEN, "User is blocked");
+//     }
+
+//     // যদি আগে থেকেই অন্য Google account linked থাকে
+//     if (isUserExist.googleId && isUserExist.googleId !== googleId) {
+//       throw new AppError(
+//         httpStatus.BAD_REQUEST,
+//         "Another Google account is already linked with this email",
+//       );
+//     }
+
+//     // যদি Credentials account হয়
+//     if (
+//       isUserExist.authProvider === AuthProvider.CREDENTIALS &&
+//       !isUserExist.googleId
+//     ) {
+//       throw new AppError(
+//         httpStatus.BAD_REQUEST,
+//         "An account already exists with this email. Please login with email and password.",
+//       );
+//     }
+
+//     // Existing Google user
+//     user = await prisma.user.update({
+//       where: {
+//         id: isUserExist.id,
+//       },
+//       data: {
+//         googleId,
+//         authProvider: AuthProvider.GOOGLE,
+//         emailVerified: true,
+//       },
+//       omit: {
+//         password: true,
+//       },
+//     });
+//   }
+
+//   // ৫. New Google user
+//   else {
+//     user = await prisma.user.create({
+//       data: {
+//         name,
+//         email,
+//         password: null,
+//         googleId,
+//         authProvider: AuthProvider.GOOGLE,
+//         role: UserRole.CANDIDATE,
+//         status: UserStatus.ACTIVE,
+//         emailVerified: true,
+
+//         candidateProfile: {
+//           create: {},
+//         },
+//       },
+
+//       omit: {
+//         password: true,
+//       },
+//     });
+
+//     const templatePath = path.join(
+//       process.cwd(),
+//       "src/app/templates/candidate-welcome-email.ejs",
+//     );
+
+//     const templateData = {
+//       name: user.name,
+//     };
+
+//     const html = await ejs.renderFile(templatePath, templateData);
+
+//     await transporter.sendMail({
+//       from: config.email_sender,
+//       to: user.email,
+//       subject: "Welcome to Development Assessment Platform",
+//       html,
+//     });
+
+//     if (!user) {
+//       throw new Error("User not found");
+//     }
+//     if (user.status === "BLOCKED") {
+//       throw new Error("User status Blocked");
+//     }
+//     if (user?.deletedAt) {
+//       throw new Error("User is deleted");
+//     }
+//   }
+
+//   const jwtPayload = {
+//     userId: user.id,
+//     name: user.name,
+//     email: user.email,
+//     role: user.role,
+//   };
+
+//   const accessToken = jwtUtils.createToken(
+//     jwtPayload,
+//     config.jwt_access_secret,
+//     config.jwt_access_expires_in,
+//   );
+
+//   const refreshToken = jwtUtils.createToken(
+//     jwtPayload,
+//     config.jwt_refresh_secret,
+//     config.jwt_refresh_expires_in,
+//   );
+
+//   return {
+//     user,
+//     accessToken,
+//     refreshToken,
+//   };
+// };
+
 const googleLogin = async (payload: IGooglePayload) => {
-  let googleIdTokenPayload: TokenPayload | null | undefined = null;
+  let googleIdTokenPayload;
 
   // ১. Google ID Token verification
   try {
@@ -612,10 +784,7 @@ const googleLogin = async (payload: IGooglePayload) => {
     });
 
     googleIdTokenPayload = ticket.getPayload();
-
-    // console.log("GOOGLE TOKEN VERIFIED");
-    // console.log("GOOGLE PAYLOAD:", googleIdTokenPayload);
-  } catch (error) {
+  } catch (error) {   
     console.error("GOOGLE VERIFY ERROR:", error);
     throw new AppError(
       httpStatus.UNAUTHORIZED,
@@ -644,7 +813,7 @@ const googleLogin = async (payload: IGooglePayload) => {
   const name = googleIdTokenPayload.name;
   const googleId = googleIdTokenPayload.sub;
 
-  // ৩. Email দিয়ে existing user খোঁজা
+  // ৩. Email দিয়ে existing user খোঁজা
   const isUserExist = await prisma.user.findUnique({
     where: {
       email,
@@ -653,9 +822,9 @@ const googleLogin = async (payload: IGooglePayload) => {
 
   let user;
 
-  // ৪. Existing user
+  // ৪. Existing user logic
   if (isUserExist) {
-    // Blocked user
+    // Blocked user check
     if (isUserExist.status === UserStatus.BLOCKED) {
       throw new AppError(httpStatus.FORBIDDEN, "User is blocked");
     }
@@ -668,18 +837,7 @@ const googleLogin = async (payload: IGooglePayload) => {
       );
     }
 
-    // যদি Credentials account হয়
-    if (
-      isUserExist.authProvider === AuthProvider.CREDENTIALS &&
-      !isUserExist.googleId
-    ) {
-      throw new AppError(
-        httpStatus.BAD_REQUEST,
-        "An account already exists with this email. Please login with email and password.",
-      );
-    }
-
-    // Existing Google user
+    // Existing user-ke Google account er sathe update kore nilam
     user = await prisma.user.update({
       where: {
         id: isUserExist.id,
@@ -693,10 +851,8 @@ const googleLogin = async (payload: IGooglePayload) => {
         password: true,
       },
     });
-  }
-
-  // ৫. New Google user
-  else {
+  } else {
+    // ৫. New Google user creation
     user = await prisma.user.create({
       data: {
         name,
@@ -712,41 +868,43 @@ const googleLogin = async (payload: IGooglePayload) => {
           create: {},
         },
       },
-
       omit: {
         password: true,
       },
     });
 
-    const templatePath = path.join(
-      process.cwd(),
-      "src/app/templates/candidate-welcome-email.ejs",
-    );
+    // Send Welcome Email to New Google User
+    try {
+      const templatePath = path.join(
+        process.cwd(),
+        "src/app/templates/candidate-welcome-email.ejs",
+      );
 
-    const templateData = {
-      name: user.name,
-    };
+      const html = await ejs.renderFile(templatePath, { name: user.name });
 
-    const html = await ejs.renderFile(templatePath, templateData);
-
-    await transporter.sendMail({
-      from: config.email_sender,
-      to: user.email,
-      subject: "Welcome to Development Assessment Platform",
-      html,
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-    if (user.status === "BLOCKED") {
-      throw new Error("User status Blocked");
-    }
-    if (user?.deletedAt) {
-      throw new Error("User is deleted");
+      await transporter.sendMail({
+        from: config.email_sender,
+        to: user.email,
+        subject: "Welcome to Development Assessment Platform",
+        html,
+      });
+    } catch (emailError) {
+      console.error("Welcome email send error:", emailError);
     }
   }
 
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (user.status === UserStatus.BLOCKED || user.deletedAt) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "User account is inactive or deleted",
+    );
+  }
+
+  // ۶. JWT Token Generation
   const jwtPayload = {
     userId: user.id,
     name: user.name,
@@ -842,5 +1000,5 @@ export const authService = {
   resetPassword,
   resendVerificationOtp,
   googleLogin,
-  resendForgotPasswordOtp
+  resendForgotPasswordOtp,
 };

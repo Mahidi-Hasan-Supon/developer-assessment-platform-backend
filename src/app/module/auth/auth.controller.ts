@@ -166,6 +166,37 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// const googleLogin = catchAsync(async (req: Request, res: Response) => {
+//   const { credential } = req.body;
+
+//   const result = await authService.googleLogin({ idToken: credential });
+
+//   const { accessToken, refreshToken, user } = result;
+
+//   res.cookie("accessToken", accessToken, {
+//     httpOnly: true,
+//     secure: config.node_env === "development" ? false : true,
+//     sameSite: config.node_env === "development" ? "lax" : "none",
+//     maxAge: 1000 * 60 * 60 * 24,
+//   });
+
+//   res.cookie("refreshToken", refreshToken, {
+//     httpOnly: true,
+//     secure: config.node_env === "development" ? false : true,
+//     sameSite: config.node_env === "development" ? "lax" : "none",
+//     maxAge: 1000 * 60 * 60 * 24 * 7,
+//   });
+
+//   sendResponse(res, {
+//     success: true,
+//     statusCode: httpStatus.OK,
+//     message: "Google login successful",
+//     data: {
+//       user,
+//     },
+//   });
+// });
+
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
   const { credential } = req.body;
 
@@ -173,18 +204,21 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
 
   const { accessToken, refreshToken, user } = result;
 
-  res.cookie("accessToken", accessToken, {
+  const cookieOptions = {
     httpOnly: true,
     secure: config.node_env === "development" ? false : true,
-    sameSite: config.node_env === "development" ? "lax" : "none",
-    maxAge: 1000 * 60 * 60 * 24,
+    sameSite:
+      config.node_env === "development" ? ("lax" as const) : ("none" as const),
+  };
+
+  res.cookie("accessToken", accessToken, {
+    ...cookieOptions,
+    maxAge: 1000 * 60 * 60 * 24, // 1 day
   });
 
   res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: config.node_env === "development" ? false : true,
-    sameSite: config.node_env === "development" ? "lax" : "none",
-    maxAge: 1000 * 60 * 60 * 24 * 7,
+    ...cookieOptions,
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
   });
 
   sendResponse(res, {
@@ -202,7 +236,10 @@ const logOut = catchAsync(
     const cookieOptions = {
       httpOnly: true,
       secure: config.node_env === "development" ? false : true,
-      sameSite: config.node_env === "development" ? "lax" : ("none" as const),
+      sameSite:
+        config.node_env === "development"
+          ? ("lax" as const)
+          : ("none" as const),
       // path: "/", // Jodi set korar somoy path: "/" dewa thake, ekhaneo dite hobe
     };
 
