@@ -14,7 +14,7 @@ import { attemptRoute } from "./app/module/attempt/attempt.route";
 import { submissionRoute } from "./app/module/submission/submission.route";
 import { answerRoute } from "./app/module/answer/answer.route";
 import { resultRoute } from "./app/module/result/result.route";
-import { paymentRoutes } from "./app/module/payment/payment.route";  
+import { paymentRoutes } from "./app/module/payment/payment.route";
 import { analyticsRoutes } from "./app/module/analytics/analytics.route";
 import { companyRouter } from "./app/module/company/company.route";
 import { userRoute } from "./app/module/user/user.route";
@@ -23,13 +23,33 @@ import { aiRouter } from "./app/module/ai/ai.route";
 
 const app: Application = express();
 
+// app.use(
+//   cors({
+//     origin: [config.frontend_url, config.backend_url],
+//     credentials: true,
+//   }),
+// );
+
+const allowedOrigins = [
+  config.frontend_url,
+  config.backend_url,
+  "http://localhost:3000",
+  "http://localhost:5000",
+].filter(Boolean); // undefined ba null value gulo automatically bad diye dibe
+
 app.use(
   cors({
-    origin: [config.frontend_url, config.backend_url],
+    origin: (origin, callback) => {
+      // Postman ba mobile app theke request asle origin undefined thake, tai allow korbo
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   }),
-);
-
+);   
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

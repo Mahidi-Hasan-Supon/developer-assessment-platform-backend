@@ -66,21 +66,56 @@ const resendVerificationOtp = catchAsync(
   },
 );
 
+// const loginUser = catchAsync(
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     const result = await authService.loginUser(req.body);
+//     const { accessToken, refreshToken } = result;
+
+//     res.cookie("accessToken", accessToken, {
+//       httpOnly: true,
+//       secure: config.node_env === "development" ? false : true,
+//       sameSite: config.node_env === "development" ? "lax" : "none",
+//       maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
+//     });
+//     res.cookie("refreshToken", refreshToken, {
+//       httpOnly: true,
+//       secure: config.node_env === "development" ? false : true,
+//       sameSite: config.node_env === "development" ? "lax" : "none",
+//       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+//     });
+
+//     sendResponse(res, {
+//       success: true,
+//       statusCode: httpStatus.OK,
+//       message: "Login successful",
+//       data: {
+//         accessToken,
+//         refreshToken,
+//       },
+//     });
+//   },
+// );
+
 const loginUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const result = await authService.loginUser(req.body);
     const { accessToken, refreshToken } = result;
 
+    const isDevelopment = config.node_env === "development";
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isDevelopment ? false : true,
+      sameSite: isDevelopment ? ("lax" as const) : ("none" as const),
+    };
+
     res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: config.node_env === "development" ? false : true,
-      sameSite: config.node_env === "development" ? "lax" : "none",
-      maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
+      ...cookieOptions,
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
     });
+
     res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: config.node_env === "development" ? false : true,
-      sameSite: config.node_env === "development" ? "lax" : "none",
+      ...cookieOptions,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     });
 
@@ -240,7 +275,6 @@ const logOut = catchAsync(
         config.node_env === "development"
           ? ("lax" as const)
           : ("none" as const),
-      // path: "/", // Jodi set korar somoy path: "/" dewa thake, ekhaneo dite hobe
     };
 
     res.clearCookie("accessToken", cookieOptions);
@@ -267,6 +301,7 @@ const logOut = catchAsync(
 //     });
 //   },
 // );
+
 const resendForgotPasswordOtp = catchAsync(
   async (req: Request, res: Response) => {
     const result = await authService.resendForgotPasswordOtp(req.body.email);
