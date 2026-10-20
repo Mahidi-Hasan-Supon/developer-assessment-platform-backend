@@ -374,6 +374,7 @@ const loginUser = async (payload: ILoginPayload) => {
 };
 
 const getMe = async (userId: string) => {
+  // console.log("Searching user with ID:", userId);
   const user = await prisma.user.findUnique({
     where: {
       id: userId,
@@ -391,6 +392,8 @@ const getMe = async (userId: string) => {
       companyProfile: true,
     },
   });
+
+  // console.log("Found user from DB:", user);
 
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, "User not found");

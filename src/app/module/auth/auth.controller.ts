@@ -97,7 +97,9 @@ const loginUser = catchAsync(
 );
 
 const getMe = catchAsync(async (req: Request, res: Response) => {
-  const user = await authService.getMe(req.user!.userId);
+  const userId = req.user?.userId;
+  // console.log(userId , 'userId');
+  const user = await authService.getMe(userId as string);
 
   sendResponse(res, {
     success: true,
@@ -197,8 +199,16 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
 
 const logOut = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    const cookieOptions = {
+      httpOnly: true,
+      secure: config.node_env === "development" ? false : true,
+      sameSite: config.node_env === "development" ? "lax" : ("none" as const),
+      // path: "/", // Jodi set korar somoy path: "/" dewa thake, ekhaneo dite hobe
+    };
+
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
+
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
@@ -207,11 +217,22 @@ const logOut = catchAsync(
     });
   },
 );
+
+// const logOut = catchAsync(
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     res.clearCookie("accessToken");
+//     res.clearCookie("refreshToken");
+//     sendResponse(res, {
+//       success: true,
+//       statusCode: httpStatus.OK,
+//       message: "User logout successfully",
+//       data: null,
+//     });
+//   },
+// );
 const resendForgotPasswordOtp = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await authService.resendForgotPasswordOtp(
-      req.body.email,
-    );
+    const result = await authService.resendForgotPasswordOtp(req.body.email);
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
@@ -229,9 +250,9 @@ export const authController = {
   refreshToken,
   getMe,
   forgotPassword,
-   resendVerificationOtp,
+  resendVerificationOtp,
   resetPassword,
   googleLogin,
   logOut,
-  resendForgotPasswordOtp
+  resendForgotPasswordOtp,
 };
