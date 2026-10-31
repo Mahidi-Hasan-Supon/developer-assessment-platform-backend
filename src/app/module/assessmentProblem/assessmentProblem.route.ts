@@ -20,10 +20,19 @@ router.get(
   assessmentProblemController.getAllAssessmentProblems,
 );
 
+// router.get(
+//   "/:assessmentId/problems",
+//   assessmentProblemController.getByIdAssessmentProblems,
+// );
+
+
 router.get(
   "/:assessmentId/problems",
+  auth(UserRole.ADMIN, UserRole.COMPANY, UserRole.CANDIDATE),
   assessmentProblemController.getByIdAssessmentProblems,
 );
+
+
 
 router.patch(
   "/:assessmentId/problems/:problemId",

@@ -195,6 +195,13 @@ const getByIdAssessmentProblems = async (
   const isCandidate = role === UserRole.CANDIDATE;
   const isPublished = assessment.status === "PUBLISHED";
   const isPublicVisitor = !userId && !role;
+  // console.log({
+  //   assessmentId,
+  //   assessmentCompanyId: assessment.companyId,
+  //   requestUserId: userId,
+  //   role,
+  //   isOwner,
+  // });
 
   const canViewProblems =
     isAdmin || isOwner || ((isCandidate || isPublicVisitor) && isPublished);

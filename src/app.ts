@@ -35,7 +35,7 @@ const allowedOrigins = [
   config.backend_url,
   "http://localhost:3000",
   "http://localhost:5000",
-].filter(Boolean); // undefined ba null value gulo automatically bad diye dibe
+].filter(Boolean); 
 
 app.use(
   cors({
